@@ -18,21 +18,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        {/* ── Global Navbar ── */}
-        <nav className="bg-[var(--copart-blue)] text-white shadow-sm">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-            <Link href="/" className="text-lg font-black tracking-tight">
-              Poti Transport
-            </Link>
-            <Link
-              href="/post"
-              className="rounded-lg bg-[var(--copart-yellow)] px-4 py-2 text-sm font-bold text-black hover:brightness-95"
-            >
-              + Post transport
-            </Link>
-          </div>
-        </nav>
-
         {children}
       </body>
     </html>
