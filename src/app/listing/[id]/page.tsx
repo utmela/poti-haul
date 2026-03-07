@@ -1,27 +1,64 @@
 import Link from "next/link";
 import { getListingById } from "@/lib/api";
 
+const T = {
+  en: {
+    notFound: "Listing not found",
+    back: "← Back",
+    price: "Price",
+    available: "Available from",
+    capacity: "Capacity",
+    spots: "spots",
+    phone: "Driver phone",
+    notes: "Notes",
+    call: "📞 Call driver",
+    whatsapp: "💬 WhatsApp",
+  },
+  ka: {
+    notFound: "განცხადება ვერ მოიძებნა",
+    back: "← უკან",
+    price: "ფასი",
+    available: "ხელმისაწვდომია",
+    capacity: "ტევადობა",
+    spots: "ადგილი",
+    phone: "მძღოლის ტელეფონი",
+    notes: "შენიშვნა",
+    call: "📞 ზარი მძღოლს",
+    whatsapp: "💬 WhatsApp",
+  },
+} as const;
+
 function formatDate(ts: string) {
   const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return ts;
-  return d.toLocaleString();
+  return isNaN(d.getTime()) ? ts : d.toLocaleString();
+}
+
+function waLink(phone: string) {
+  const d = phone.replace(/[^\d]/g, "");
+  return `https://wa.me/${d.startsWith("995") ? d : `995${d}`}`;
 }
 
 export default async function ListingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }) {
   const { id } = await params;
+  const { lang: langParam } = await searchParams;
+  const lang = langParam === "en" ? "en" : "ka";
+  const t = T[lang];
+
   const listing = await getListingById(id);
 
   if (!listing) {
     return (
       <main className="mx-auto max-w-4xl p-6">
-        <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
-          <div className="text-2xl font-black text-gray-900">Listing not found</div>
-          <Link href="/" className="mt-4 inline-block text-sm font-semibold text-gray-700 underline">
-            ← Back to home
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+          <div className="text-2xl font-black text-gray-900">{t.notFound}</div>
+          <Link href="/" className="mt-4 inline-block text-sm font-semibold text-[var(--copart-blue)] hover:underline">
+            {t.back}
           </Link>
         </div>
       </main>
@@ -29,77 +66,66 @@ export default async function ListingPage({
   }
 
   return (
-    <main className="mx-auto max-w-4xl p-6">
-      <div className="mb-5">
-        <Link href="/" className="text-sm font-semibold text-gray-700 hover:underline">
-          ← Back to home
+    <main className="min-h-screen" style={{ background: "linear-gradient(160deg,#f0f4ff 0%,#f7f8fa 60%,#fff 100%)" }}>
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <Link href={`/?lang=${lang}`} className="text-sm font-semibold text-[var(--copart-blue)] hover:underline">
+          {t.back}
         </Link>
-      </div>
 
-      <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex-1">
-            <h1 className="text-4xl font-black text-gray-900">
-              {listing.from_city} → {listing.to_city}
+        <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          {/* header strip */}
+          <div className="bg-[var(--copart-blue)] px-6 py-5">
+            <h1 className="text-3xl font-black text-white md:text-4xl">
+              {listing.from_city} <span className="text-yellow-300">→</span> {listing.to_city}
             </h1>
-
-            <div className="mt-3 text-lg text-gray-700">
+            <p className="mt-1 text-sm text-blue-200">
               {listing.driver_display_name} · {listing.vehicle_type}
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Price
-                </div>
-                <div className="mt-1 text-2xl font-black text-gray-900">
-                  {listing.price_gel} GEL
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Available from
-                </div>
-                <div className="mt-1 text-lg font-bold text-gray-900">
-                  {formatDate(listing.available_from)}
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Capacity
-                </div>
-                <div className="mt-1 text-lg font-bold text-gray-900">
-                  {listing.spots_available} / {listing.capacity_total} spots
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Driver phone
-                </div>
-                <div className="mt-1 text-lg font-bold text-gray-900">
-                  {listing.driver_phone}
-                </div>
-              </div>
-            </div>
-
-            {listing.notes ? (
-              <div className="mt-6 rounded-2xl bg-gray-50 p-4 text-gray-700">
-                <div className="mb-1 text-sm font-semibold text-gray-900">Notes</div>
-                {listing.notes}
-              </div>
-            ) : null}
+            </p>
           </div>
 
-          <div className="w-full lg:w-[240px]">
-            <a
-              href={`tel:${listing.driver_phone}`}
-              className="block rounded-2xl bg-green-600 px-5 py-4 text-center text-base font-bold text-white transition hover:bg-green-700"
-            >
-              Call driver
-            </a>
+          <div className="p-6">
+            {/* stat grid */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t.price}</div>
+                <div className="mt-1 text-2xl font-black text-gray-900">{listing.price_gel} ₾</div>
+              </div>
+
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t.available}</div>
+                <div className="mt-1 text-lg font-bold text-gray-900">{formatDate(listing.available_from)}</div>
+              </div>
+
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t.capacity}</div>
+                <div className="mt-1 text-lg font-bold text-gray-900">
+                  {listing.spots_available} / {listing.capacity_total} {t.spots}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t.phone}</div>
+                <div className="mt-1 text-lg font-bold text-gray-900">{listing.driver_phone}</div>
+              </div>
+            </div>
+
+            {listing.notes && (
+              <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                💬 {listing.notes}
+              </div>
+            )}
+
+            {/* CTA buttons */}
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <a href={`tel:${listing.driver_phone}`}
+                className="flex items-center justify-center gap-2 rounded-xl bg-[var(--copart-yellow)] px-5 py-3 text-sm font-black text-black hover:brightness-95 transition">
+                {t.call}
+              </a>
+              <a href={waLink(listing.driver_phone)} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl bg-[#25d366] px-5 py-3 text-sm font-black text-white hover:bg-[#1ebe5d] transition">
+                {t.whatsapp}
+              </a>
+            </div>
           </div>
         </div>
       </div>

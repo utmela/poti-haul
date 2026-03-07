@@ -23,7 +23,7 @@ const CITY_OPTIONS = [
 
 const VEHICLE_TYPES = [
   { en: "Tow truck",               ka: "ამწე" },
-  { en: "Car carrier",             ka: "ავტოვოზი" },
+  { en: "Car carrier",             ka: "ევაკუატორი" },
   { en: "Trailer",                 ka: "მისაბმელი" },
   { en: "Minivan (with trailer)",  ka: "მიქსერი (მისაბმელით)" },
   { en: "Other",                   ka: "სხვა" },

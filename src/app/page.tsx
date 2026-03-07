@@ -23,7 +23,7 @@ const T = {
   ka: {
     badge: "საქართველო · ავტოტრანსპორტი",
     title: "პოტი → ნებისმიერ ქალაქში",
-    sub: "ევაკუატორები ფოთიდან საქართველოს ნებისმიერ ქალაქამდე. შეადარეთ ფასები და დაუკავშირდით მძღოლებს.",
+    sub: "ამწეები და ავტოვოზები პოტიდან საქართველოს ნებისმიერ ქალაქამდე. შეადარეთ ფასები და დაუკავშირდით მძღოლებს.",
     activeListings: "განცხადებები", citiesCovered: "ქალაქები", availableSpots: "ადგილები",
     destination: "დანიშნულება…", minGel: "მინ ₾", maxGel: "მაქს ₾",
     onlySpots: "ადგილებით", hideExpired: "ვადაგასული",
@@ -285,7 +285,7 @@ export default function Home() {
                         {copied ? "✓ " + t.phoneCopied : t.copyPhone}
                       </button>
 
-                      <Link href={`/listing/${l.id}`}
+                      <Link href={`/listing/${l.id}?lang=${lang}`}
                         className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-center text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
                         {t.viewDetails} →
                       </Link>
