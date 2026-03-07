@@ -1,5 +1,6 @@
 export type Listing = {
   id: string;
+  user_id: string | null;
   from_city: string;
   to_city: string;
   price_gel: number;
@@ -14,3 +15,9 @@ export type Listing = {
 };
 
 export type CreateListingInput = Omit<Listing, "id" | "created_at">;
+
+export type Profile = {
+  id: string;
+  role: "driver" | "admin";
+  created_at: string;
+};

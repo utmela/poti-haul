@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createListing } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import type { CreateListingInput } from "@/lib/types";
 
 const CITIES = [
@@ -82,7 +83,13 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 // ── Main component ────────────────────────────────────────────────────────────
 export default function PostListingPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [lang, setLang] = useState<"en" | "ka">("ka");
+
+  // Redirect to login if not signed in
+  useEffect(() => {
+    if (!authLoading && !user) router.replace("/auth");
+  }, [authLoading, user, router]);
   const ka = lang === "ka";
 
   const [step, setStep] = useState(1);
@@ -153,6 +160,7 @@ export default function PostListingPage() {
         driver_phone: normalizePhone(phone),
         vehicle_type: vehicleType,
         notes: notes.trim() || null,
+        user_id: user?.id ?? null,
       };
       await createListing(payload);
       setDone(true);
@@ -166,6 +174,16 @@ export default function PostListingPage() {
 
   const inputCls = "w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-[var(--copart-blue)] focus:bg-white transition";
   const selectCls = inputCls + " cursor-pointer";
+
+  // ── Auth guard screen ─────────────────────────────────────────────────────
+  if (authLoading || !user) return (
+    <main className="flex min-h-[80vh] items-center justify-center text-gray-400">
+      <svg className="mr-2 h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+      </svg>
+    </main>
+  );
 
   // ── Success screen ────────────────────────────────────────────────────────
   if (done) return (
