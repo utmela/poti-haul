@@ -13,8 +13,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ka">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="ka" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
+      >
         {/* ── Global Navbar ── */}
         <nav className="bg-[var(--copart-blue)] text-white shadow-sm">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
