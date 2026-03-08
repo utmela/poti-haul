@@ -6,6 +6,19 @@ import { getListings, deleteListing } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { Listing } from "@/lib/types";
 
+const CITIES = [
+  "Tbilisi",
+  "Kutaisi",
+  "Batumi",
+  "Zugdidi",
+  "Gori",
+  "Rustavi",
+  "Telavi",
+  "Borjomi",
+  "Bakuriani",
+  "Gudauri",
+  "Poti",
+];
 const T = {
   en: {
     search: "Search",
@@ -515,24 +528,42 @@ export default function Home() {
           <label className="mb-2 block text-[13px] font-bold tracking-wide text-gray-700">
             {t.fromCity}
           </label>
-          <input
-            className="h-14 w-full rounded-2xl border border-gray-300 bg-white px-4 text-[15px] font-medium text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-[#ff6a00] focus:ring-4 focus:ring-orange-100"
-            placeholder={lang === "ka" ? "მაგ. ფოთი" : "e.g. Poti"}
+          <select
             value={fromCity}
             onChange={(e) => setFromCity(e.target.value)}
-          />
+            className="h-14 w-full rounded-2xl border border-gray-300 bg-white px-4"
+          >
+            <option value="">
+              {lang === "ka" ? "ყველა ქალაქი" : "All cities"}
+            </option>
+
+            {CITIES.map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="lg:col-span-3">
           <label className="mb-2 block text-[13px] font-bold tracking-wide text-gray-700">
             {t.toCity}
           </label>
-          <input
-            className="h-14 w-full rounded-2xl border border-gray-300 bg-white px-4 text-[15px] font-medium text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-[#ff6a00] focus:ring-4 focus:ring-orange-100"
-            placeholder={lang === "ka" ? "მაგ. თბილისი" : "e.g. Tbilisi"}
+          <select
             value={toCity}
             onChange={(e) => setToCity(e.target.value)}
-          />
+            className="h-14 w-full rounded-2xl border border-gray-300 bg-white px-4"
+          >
+            <option value="">
+              {lang === "ka" ? "ყველა ქალაქი" : "All cities"}
+            </option>
+
+            {CITIES.map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="lg:col-span-2">
