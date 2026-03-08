@@ -456,8 +456,17 @@ export default function Home() {
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           <Link href={`/listing/${l.id}?lang=${lang}`} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50">{t.viewDetails}</Link>
-                          <button onClick={() => copyPhone(l.driver_phone)} className={`rounded-xl border px-4 py-2 text-xs font-bold transition ${copied ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}>
-                            {copied ? "✓ Copied" : "📋 Copy"}
+                          <button onClick={() => copyPhone(l.driver_phone)} className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition ${copied ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}>
+                            {copied ? (
+                              <>✓ {lang === "ka" ? "დაკოპირდა" : "Copied"}</>
+                            ) : (
+                              <>
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                                </svg>
+                                {lang === "ka" ? "ნომრის კოპირება" : "Copy number"}
+                              </>
+                            )}
                           </button>
                           <a href={waLink(l.driver_phone)} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-[#25d366] px-4 py-2 text-xs font-bold text-white transition hover:brightness-95">WhatsApp</a>
                           <a href={`tel:${l.driver_phone}`} className="rounded-xl bg-orange-500 px-5 py-2 text-xs font-bold text-white transition hover:bg-orange-600">{t.callDriver}</a>
