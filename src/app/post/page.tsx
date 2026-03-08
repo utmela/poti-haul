@@ -18,6 +18,7 @@ const CITIES = [
   { en: "Borjomi", ka: "ბორჯომი" },
   { en: "Bakuriani", ka: "ბაკურიანი" },
   { en: "Gudauri", ka: "გუდაური" },
+  { en: "Poti", ka: "ფოთი" },
   { en: "Other", ka: "სხვა" },
 ];
 
@@ -115,7 +116,7 @@ function Stepper({
         const done = n < step;
 
         return (
-          <div key={label} className="relative">
+          <div key={label}>
             <div
               className={`rounded-2xl border px-4 py-4 transition ${
                 active
@@ -132,7 +133,7 @@ function Stepper({
                       ? "bg-orange-500 text-white"
                       : done
                       ? "bg-emerald-500 text-white"
-                      : "bg-white text-gray-400 border border-gray-200"
+                      : "border border-gray-200 bg-white text-gray-400"
                   }`}
                 >
                   {done ? "✓" : n}
@@ -196,8 +197,10 @@ export default function PostListingPage() {
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
 
+  const [fromCity, setFromCity] = useState("Poti");
   const [toCity, setToCity] = useState("Tbilisi");
-  const [customCity, setCustomCity] = useState("");
+  const [customFromCity, setCustomFromCity] = useState("");
+  const [customToCity, setCustomToCity] = useState("");
   const [vehicleType, setVehicleType] = useState("Tow truck");
 
   const [price, setPrice] = useState(400);
@@ -210,7 +213,8 @@ export default function PostListingPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
-  const finalCity = toCity === "Other" ? customCity.trim() : toCity;
+  const finalFromCity = fromCity === "Other" ? customFromCity.trim() : fromCity;
+  const finalToCity = toCity === "Other" ? customToCity.trim() : toCity;
 
   const stepLabels = ka
     ? ["ვინ ხარ", "მარშრუტი", "დეტალები"]
@@ -237,8 +241,16 @@ export default function PostListingPage() {
     }
 
     if (s === 2) {
-      if (!finalCity) {
-        return ka ? "აირჩიეთ ქალაქი." : "Choose a city.";
+      if (!finalFromCity) {
+        return ka ? "აირჩიეთ გამგზავრების ქალაქი." : "Choose the departure city.";
+      }
+      if (!finalToCity) {
+        return ka ? "აირჩიეთ დანიშნულების ქალაქი." : "Choose the destination city.";
+      }
+      if (finalFromCity.trim().toLowerCase() === finalToCity.trim().toLowerCase()) {
+        return ka
+          ? "საიდან და სადამდე ერთნაირი ვერ იქნება."
+          : "From and To cannot be the same.";
       }
     }
 
@@ -276,8 +288,8 @@ export default function PostListingPage() {
 
     try {
       const payload: CreateListingInput = {
-        from_city: "Poti",
-        to_city: finalCity,
+        from_city: finalFromCity,
+        to_city: finalToCity,
         price_gel: price,
         capacity_total: capacityTotal,
         spots_available: spotsAvailable,
@@ -295,7 +307,7 @@ export default function PostListingPage() {
       setTimeout(() => {
         router.push("/");
         router.refresh();
-      }, 1800);
+      }, 1500);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : ka ? "შეცდომა." : "Error.");
     } finally {
@@ -304,7 +316,14 @@ export default function PostListingPage() {
   }
 
   const displayVehicle = useMemo(() => translateVehicle(vehicleType, lang), [vehicleType, lang]);
-  const displayToCity = useMemo(() => translateCity(finalCity || toCity, lang), [finalCity, toCity, lang]);
+  const displayFromCity = useMemo(
+    () => translateCity(finalFromCity || fromCity, lang),
+    [finalFromCity, fromCity, lang]
+  );
+  const displayToCity = useMemo(
+    () => translateCity(finalToCity || toCity, lang),
+    [finalToCity, toCity, lang]
+  );
 
   if (authLoading || !user) {
     return (
@@ -312,7 +331,7 @@ export default function PostListingPage() {
         <div className="flex items-center rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
           <svg className="mr-3 h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8z" />
           </svg>
           {ka ? "იტვირთება..." : "Loading..."}
         </div>
@@ -338,8 +357,7 @@ export default function PostListingPage() {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
-      {/* <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6"> */}
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="mb-6 flex items-center justify-between gap-3">
           <Link
             href="/"
@@ -364,7 +382,7 @@ export default function PostListingPage() {
         </div>
 
         <div className="overflow-hidden rounded-[32px] border border-gray-200 bg-white shadow-[0_10px_40px_rgba(15,23,42,0.06)]">
-          <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="grid lg:grid-cols-[1.2fr_0.8fr]">
             <div className="p-6 sm:p-8">
               <div className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-orange-700">
                 {ka ? "განცხადების დამატება" : "Create listing"}
@@ -376,8 +394,8 @@ export default function PostListingPage() {
 
               <p className="mt-3 max-w-xl text-sm leading-6 text-gray-600 sm:text-base">
                 {ka
-                  ? "დაამატე ტრანსპორტის განცხადება ფოთიდან სასურველ ქალაქამდე და მიიღე ზარები პირდაპირ მომხმარებლებისგან."
-                  : "Add a transport listing from Poti to your desired city and receive direct calls from customers."}
+                  ? "დაამატე განცხადება ნებისმიერი ქალაქიდან ნებისმიერ ქალაქამდე და მიიღე ზარები პირდაპირ მომხმარებლებისგან."
+                  : "Create a listing from any city to any city and receive direct calls from customers."}
               </p>
 
               <div className="mt-8">
@@ -418,34 +436,53 @@ export default function PostListingPage() {
 
               {step === 2 && (
                 <div className="grid gap-5">
-                  <Field label={ka ? "საიდან" : "From"}>
-                    <div className="flex h-14 items-center rounded-2xl border border-orange-200 bg-orange-50 px-4 text-sm font-bold text-orange-700">
-                      📍 {ka ? "ფოთი (ფიქსირებული)" : "Poti (fixed)"}
-                    </div>
-                  </Field>
-
-                  <Field label={ka ? "სადამდე" : "To"}>
-                    <select
-                      className={inputCls}
-                      value={toCity}
-                      onChange={(e) => setToCity(e.target.value)}
-                    >
-                      {CITIES.map((c) => (
-                        <option key={c.en} value={c.en}>
-                          {ka ? c.ka : c.en}
-                        </option>
-                      ))}
-                    </select>
-
-                    {toCity === "Other" && (
-                      <input
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <Field label={ka ? "საიდან" : "From"}>
+                      <select
                         className={inputCls}
-                        placeholder={ka ? "ქალაქის სახელი" : "City name"}
-                        value={customCity}
-                        onChange={(e) => setCustomCity(e.target.value)}
-                      />
-                    )}
-                  </Field>
+                        value={fromCity}
+                        onChange={(e) => setFromCity(e.target.value)}
+                      >
+                        {CITIES.map((c) => (
+                          <option key={c.en} value={c.en}>
+                            {ka ? c.ka : c.en}
+                          </option>
+                        ))}
+                      </select>
+
+                      {fromCity === "Other" && (
+                        <input
+                          className={inputCls}
+                          placeholder={ka ? "ქალაქის სახელი" : "City name"}
+                          value={customFromCity}
+                          onChange={(e) => setCustomFromCity(e.target.value)}
+                        />
+                      )}
+                    </Field>
+
+                    <Field label={ka ? "სადამდე" : "To"}>
+                      <select
+                        className={inputCls}
+                        value={toCity}
+                        onChange={(e) => setToCity(e.target.value)}
+                      >
+                        {CITIES.map((c) => (
+                          <option key={c.en} value={c.en}>
+                            {ka ? c.ka : c.en}
+                          </option>
+                        ))}
+                      </select>
+
+                      {toCity === "Other" && (
+                        <input
+                          className={inputCls}
+                          placeholder={ka ? "ქალაქის სახელი" : "City name"}
+                          value={customToCity}
+                          onChange={(e) => setCustomToCity(e.target.value)}
+                        />
+                      )}
+                    </Field>
+                  </div>
 
                   <Field label={ka ? "ტრანსპორტის ტიპი" : "Vehicle type"}>
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -532,7 +569,7 @@ export default function PostListingPage() {
                       className={textAreaCls}
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder={ka ? "მაგ. პორტის მახლობლად ვარ" : "e.g. I’m near the port"}
+                      placeholder={ka ? "მაგ. დამირეკეთ ჩამოსვლამდე 20 წუთით ადრე" : "e.g. Call me 20 minutes before arrival"}
                     />
                   </Field>
                 </div>
@@ -571,122 +608,116 @@ export default function PostListingPage() {
                     type="button"
                     onClick={submit}
                     disabled={loading}
-                    className="h-14 flex-1 rounded-2xl bg-emerald-500 px-5 text-sm font-bold text-white transition hover:bg-emerald-600 disabled:opacity-50"
+                    className="h-14 flex-1 rounded-2xl bg-orange-500 px-5 text-sm font-bold text-white transition hover:bg-orange-600 disabled:opacity-50"
                   >
                     {loading
                       ? ka
                         ? "იგზავნება..."
                         : "Submitting..."
                       : ka
-                      ? "✓ გამოქვეყნება"
-                      : "✓ Publish listing"}
+                      ? "გამოქვეყნება"
+                      : "Publish listing"}
                   </button>
                 )}
               </div>
             </div>
 
             <div className="border-t border-gray-100 bg-gradient-to-br from-slate-950 via-slate-900 to-zinc-900 p-6 text-white lg:border-l lg:border-t-0 sm:p-8">
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">
-                {ka ? "ცოცხალი წინასწარი ხედი" : "Live preview"}
-              </div>
-
-              <div className="mt-5 rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-inner backdrop-blur">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
-                      {ka ? "მარშრუტი" : "Route"}
-                    </div>
-                    <div className="mt-1 text-2xl font-black tracking-tight">
-                      {ka ? "ფოთი" : "Poti"}
-                      <span className="mx-2 text-orange-400">→</span>
-                      {displayToCity || (ka ? "ქალაქი" : "City")}
-                    </div>
-                  </div>
-                  <div className="rounded-full bg-orange-500 px-3 py-1 text-xs font-black text-white">
-                    {step === 1 ? "1/3" : step === 2 ? "2/3" : "3/3"}
-                  </div>
+              <div className="sticky top-6">
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">
+                  {ka ? "ცოცხალი წინასწარი ხედი" : "Live preview"}
                 </div>
 
-                <div className="mt-5 grid gap-4">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-                      {ka ? "მძღოლი / სერვისი" : "Driver / service"}
+                <div className="mt-5 rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-inner backdrop-blur">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                        {ka ? "მარშრუტი" : "Route"}
+                      </div>
+                      <div className="mt-1 text-2xl font-black tracking-tight">
+                        {displayFromCity || (ka ? "საიდან" : "From")}
+                        <span className="mx-2 text-orange-400">→</span>
+                        {displayToCity || (ka ? "სადამდე" : "To")}
+                      </div>
                     </div>
-                    <div className="mt-1 text-base font-bold text-white">
-                      {displayName.trim() || (ka ? "შენი სახელი" : "Your name")}
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-                      {ka ? "ტელეფონი" : "Phone"}
-                    </div>
-                    <div className="mt-1 text-base font-bold text-white/95">
-                      {phone.trim() || "+995 555 123 456"}
+                    <div className="rounded-full bg-orange-500 px-3 py-1 text-xs font-black text-white">
+                      {step}/3
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-                      {ka ? "ტრანსპორტი" : "Vehicle"}
-                    </div>
-                    <div className="mt-1 text-base font-bold text-white">
-                      {displayVehicle}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="mt-5 grid gap-3">
                     <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-                        {ka ? "ფასი" : "Price"}
+                        {ka ? "მძღოლი / სერვისი" : "Driver / service"}
                       </div>
-                      <div className="mt-1 text-lg font-black text-white">
-                        {price}₾
+                      <div className="mt-1 text-base font-bold text-white">
+                        {displayName.trim() || (ka ? "შენი სახელი" : "Your name")}
                       </div>
                     </div>
 
                     <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-                        {ka ? "ტევადობა" : "Capacity"}
+                        {ka ? "ტელეფონი" : "Phone"}
                       </div>
-                      <div className="mt-1 text-lg font-black text-white">
-                        {capacityTotal}
+                      <div className="mt-1 text-base font-bold text-white/95">
+                        {phone.trim() || "+995 555 123 456"}
                       </div>
                     </div>
 
                     <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-                        {ka ? "ადგილი" : "Spots"}
+                        {ka ? "ტრანსპორტი" : "Vehicle"}
                       </div>
-                      <div className="mt-1 text-lg font-black text-white">
-                        {spotsAvailable}
+                      <div className="mt-1 text-base font-bold text-white">{displayVehicle}</div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                          {ka ? "ფასი" : "Price"}
+                        </div>
+                        <div className="mt-1 text-lg font-black text-white">{price}₾</div>
+                      </div>
+
+                      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                          {ka ? "ტევადობა" : "Capacity"}
+                        </div>
+                        <div className="mt-1 text-lg font-black text-white">{capacityTotal}</div>
+                      </div>
+
+                      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                          {ka ? "ადგილი" : "Spots"}
+                        </div>
+                        <div className="mt-1 text-lg font-black text-white">{spotsAvailable}</div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                        {ka ? "ხელმისაწვდომია" : "Available from"}
+                      </div>
+                      <div className="mt-1 text-base font-bold text-white">
+                        {availableFrom ? new Date(availableFrom).toLocaleString() : "—"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                        {ka ? "შენიშვნა" : "Notes"}
+                      </div>
+                      <div className="mt-1 text-sm leading-6 text-white/85">
+                        {notes.trim() || (ka ? "დამატებითი ინფორმაცია ჯერ არ არის მითითებული." : "No additional information yet.")}
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-                      {ka ? "ხელმისაწვდომია" : "Available from"}
-                    </div>
-                    <div className="mt-1 text-base font-bold text-white">
-                      {availableFrom ? new Date(availableFrom).toLocaleString() : "—"}
-                    </div>
+                  <div className="mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+                    {ka
+                      ? "რჩევა: სწორი მარშრუტი, WhatsApp ნომერი და მოკლე შენიშვნა უფრო მეტ ზარს მოიტანს."
+                      : "Tip: A clear route, WhatsApp number, and short note usually bring more calls."}
                   </div>
-
-                  <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-                      {ka ? "შენიშვნა" : "Notes"}
-                    </div>
-                    <div className="mt-1 text-sm leading-6 text-white/85">
-                      {notes.trim() || (ka ? "დამატებითი ინფორმაცია ჯერ არ არის მითითებული." : "No additional information yet.")}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
-                  {ka
-                    ? "რჩევა: WhatsApp ნომერი და მოკლე შენიშვნა უფრო მეტ ზარს მოიტანს."
-                    : "Tip: A WhatsApp number and a short note usually bring more calls."}
                 </div>
               </div>
             </div>

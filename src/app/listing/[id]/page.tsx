@@ -9,18 +9,18 @@ import type { Listing } from "@/lib/types";
 
 const T = {
   en: {
-    notFound: "Listing not found", back: "← Back", price: "Price",
+    notFound: "Listing not found", back: "Back", price: "Price",
     available: "Available from", capacity: "Capacity", spots: "spots",
-    phone: "Driver phone", notes: "Notes", call: "📞 Call driver", whatsapp: "💬 WhatsApp",
+    phone: "Driver phone", notes: "Notes", call: "Call driver", whatsapp: "WhatsApp",
     edit: "✎ Edit listing", delete: "🗑 Delete listing", confirmDelete: "Delete this listing?",
-    deleting: "Deleting…",
+    deleting: "Deleting…", route: "Route", driver: "Driver / Service", vehicle: "Vehicle",
   },
   ka: {
-    notFound: "განცხადება ვერ მოიძებნა", back: "← უკან", price: "ფასი",
+    notFound: "განცხადება ვერ მოიძებნა", back: "უკან", price: "ფასი",
     available: "ხელმისაწვდომია", capacity: "ტევადობა", spots: "ადგილი",
-    phone: "მძღოლის ტელეფონი", notes: "შენიშვნა", call: "📞 ზარი მძღოლს", whatsapp: "💬 WhatsApp",
+    phone: "მძღოლის ტელეფონი", notes: "შენიშვნა", call: "ზარი მძღოლს", whatsapp: "WhatsApp",
     edit: "✎ რედაქტირება", delete: "🗑 წაშლა", confirmDelete: "წაშალოთ განცხადება?",
-    deleting: "იშლება…",
+    deleting: "იშლება…", route: "მარშრუტი", driver: "მძღოლი / სერვისი", vehicle: "ტრანსპორტი",
   },
 } as const;
 
@@ -32,6 +32,15 @@ function formatDate(ts: string) {
 function waLink(phone: string) {
   const d = phone.replace(/[^\d]/g, "");
   return `https://wa.me/${d.startsWith("995") ? d : `995${d}`}`;
+}
+
+function vehicleIcon(type: string) {
+  const v = type.toLowerCase();
+  if (v.includes("tow") || v.includes("ამწე")) return "🚛";
+  if (v.includes("carrier") || v.includes("ავტოვოზი")) return "🚗";
+  if (v.includes("trailer") || v.includes("მისაბმელი")) return "🚜";
+  if (v.includes("minivan") || v.includes("მინივენი")) return "🚐";
+  return "🔧";
 }
 
 export default function ListingPage({ params }: { params: Promise<{ id: string }> }) {
@@ -71,81 +80,115 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
   }
 
   if (notFound) return (
-    <main className="p-8 text-center">
-      <div className="text-lg font-bold">{t.notFound}</div>
-      <Link href={`/?lang=${lang}`} className="mt-3 inline-block text-sm text-[var(--copart-blue)] hover:underline">{t.back}</Link>
+    <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
+      <div className="text-lg font-black text-gray-800">{t.notFound}</div>
+      <Link href={`/?lang=${lang}`}
+        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 transition">
+        ← {t.back}
+      </Link>
     </main>
   );
 
   if (!listing) return (
-    <main className="flex min-h-[60vh] items-center justify-center text-gray-400">
-      <svg className="mr-2 h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-      </svg>
+    <main className="flex min-h-[60vh] items-center justify-center bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
+      <div className="flex items-center rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm text-gray-500">
+        <svg className="mr-3 h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        </svg>
+        {lang === "ka" ? "იტვირთება..." : "Loading..."}
+      </div>
     </main>
   );
 
   const owned = canManage(listing);
 
   return (
-    <main className="min-h-screen" style={{ background: "linear-gradient(160deg,#f0f4ff 0%,#f7f8fa 60%,#fff 100%)" }}>
-      <div className="mx-auto max-w-3xl px-4 py-8">
-        <Link href={`/?lang=${lang}`} className="text-sm font-semibold text-[var(--copart-blue)] hover:underline">
-          {t.back}
-        </Link>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
 
-        <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          {/* header */}
-          <div className="bg-[var(--copart-blue)] px-6 py-5">
-            <h1 className="text-3xl font-black text-white md:text-4xl">
-              {listing.from_city} <span className="text-yellow-300">→</span> {listing.to_city}
+        {/* top bar */}
+        <div className="mb-6 flex items-center justify-between">
+          <Link href={`/?lang=${lang}`}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50">
+            ← {t.back}
+          </Link>
+          <div className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-orange-700">
+            {vehicleIcon(listing.vehicle_type)} {listing.vehicle_type}
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-[32px] border border-gray-200 bg-white shadow-[0_10px_40px_rgba(15,23,42,0.06)]">
+
+          {/* hero route header */}
+          <div className="px-6 py-8 sm:px-8 sm:py-10">
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">{t.route}</div>
+            <h1 className="mt-2 text-4xl font-black tracking-tight text-gray-950 sm:text-5xl">
+              {listing.from_city}
+              <span className="mx-3 text-orange-500">→</span>
+              {listing.to_city}
             </h1>
-            <p className="mt-1 text-sm text-blue-200">{listing.driver_display_name} · {listing.vehicle_type}</p>
+            <p className="mt-2 text-sm font-semibold text-gray-500">
+              {listing.driver_display_name}
+            </p>
           </div>
 
-          <div className="p-6">
+          <div className="border-t border-gray-100 px-6 pb-8 pt-6 sm:px-8">
+
+            {/* stat cards */}
             <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                { label: t.price, value: `${listing.price_gel} ₾` },
-                { label: t.available, value: formatDate(listing.available_from) },
-                { label: t.capacity, value: `${listing.spots_available} / ${listing.capacity_total} ${t.spots}` },
-                { label: t.phone, value: listing.driver_phone },
-              ].map(({ label, value }) => (
-                <div key={label} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">{label}</div>
-                  <div className="mt-1 text-lg font-bold text-gray-900">{value}</div>
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">{t.price}</div>
+                <div className="mt-1 text-2xl font-black text-gray-950">{listing.price_gel} ₾</div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">{t.available}</div>
+                <div className="mt-1 text-base font-bold text-gray-900">{formatDate(listing.available_from)}</div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">{t.capacity}</div>
+                <div className="mt-1 text-2xl font-black text-gray-950">
+                  {listing.spots_available}
+                  <span className="text-base font-semibold text-gray-400"> / {listing.capacity_total} {t.spots}</span>
                 </div>
-              ))}
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">{t.phone}</div>
+                <div className="mt-1 text-base font-bold text-gray-900">{listing.driver_phone}</div>
+              </div>
             </div>
 
+            {/* notes */}
             {listing.notes && (
-              <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <div className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 px-5 py-4 text-sm font-medium leading-6 text-orange-800">
                 💬 {listing.notes}
               </div>
             )}
 
-            {/* CTA */}
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {/* CTA buttons */}
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <a href={`tel:${listing.driver_phone}`}
-                className="flex items-center justify-center gap-2 rounded-xl bg-[var(--copart-yellow)] px-5 py-3 text-sm font-black text-black hover:brightness-95 transition">
-                {t.call}
+                className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 text-sm font-black text-white transition hover:bg-orange-600">
+                📞 {t.call}
               </a>
               <a href={waLink(listing.driver_phone)} target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl bg-[#25d366] px-5 py-3 text-sm font-black text-white hover:bg-[#1ebe5d] transition">
-                {t.whatsapp}
+                className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-500 text-sm font-black text-white transition hover:bg-emerald-600">
+                💬 {t.whatsapp}
               </a>
             </div>
 
-            {/* owner actions */}
+            {/* owner / admin actions */}
             {owned && (
-              <div className="mt-4 flex gap-3 border-t border-gray-100 pt-4">
+              <div className="mt-4 grid gap-3 border-t border-gray-100 pt-4 sm:grid-cols-2">
                 <Link href={`/listing/${id}/edit?lang=${lang}`}
-                  className="flex-1 rounded-xl border border-gray-200 bg-white py-2.5 text-center text-sm font-bold text-gray-700 hover:bg-gray-50 transition">
+                  className="flex h-12 items-center justify-center rounded-2xl border border-gray-300 bg-white text-sm font-bold text-gray-700 transition hover:bg-gray-50">
                   {t.edit}
                 </Link>
                 <button onClick={handleDelete} disabled={deleting}
-                  className="flex-1 rounded-xl border border-red-200 bg-red-50 py-2.5 text-sm font-bold text-red-600 hover:bg-red-100 disabled:opacity-50 transition">
+                  className="flex h-12 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50">
                   {deleting ? t.deleting : t.delete}
                 </button>
               </div>
