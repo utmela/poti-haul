@@ -62,6 +62,35 @@ export async function getListings(filters: ListingFilters = {}): Promise<Listing
   return (data ?? []) as Listing[];
 }
 
+export async function getAllListings(): Promise<Listing[]> {
+  const { data, error } = await supabase
+    .from("listings")
+    .select(LISTING_FIELDS)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getAllListings:", error);
+    return [];
+  }
+
+  return (data ?? []) as Listing[];
+}
+
+export async function getListingsByUser(userId: string): Promise<Listing[]> {
+  const { data, error } = await supabase
+    .from("listings")
+    .select(LISTING_FIELDS)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getListingsByUser:", error);
+    return [];
+  }
+
+  return (data ?? []) as Listing[];
+}
+
 export async function getListingById(id: string): Promise<Listing | null> {
   const { data, error } = await supabase
     .from("listings")

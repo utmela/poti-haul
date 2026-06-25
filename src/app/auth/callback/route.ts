@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url);
   const code = searchParams.get("code");
+  const lang = searchParams.get("lang") === "en" ? "en" : "ka";
 
   if (code) {
     const supabase = createClient(
@@ -13,5 +14,5 @@ export async function GET(req: NextRequest) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  return NextResponse.redirect(`${origin}/`);
+  return NextResponse.redirect(`${origin}/account?lang=${lang}&welcome=1`);
 }

@@ -1,178 +1,248 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { getListings, deleteListing } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { StylizedDropdown } from "@/components/stylized-dropdown";
+import {
+  ArrowRightIcon,
+  BoardIcon,
+  CalendarIcon,
+  CapacityIcon,
+  CopyIcon,
+  DriverIcon,
+  EditIcon,
+  MapPinIcon,
+  MegaphoneIcon,
+  MessageIcon,
+  PhoneIcon,
+  RouteIcon,
+  SearchIcon,
+  ShieldIcon,
+  TrashIcon,
+  UserIcon,
+  VehicleGlyph,
+} from "@/components/site-icons";
+import { getAccountRole } from "@/lib/account-role";
 import { useAuth } from "@/lib/auth-context";
+import { deleteListing, getListings } from "@/lib/api";
+import {
+  cityLabel,
+  FILTER_CITY_OPTIONS,
+  FILTER_VEHICLE_OPTIONS,
+  languageFromSearch,
+  type Lang,
+  vehicleKind,
+  vehicleLabel,
+} from "@/lib/site-data";
 import type { Listing } from "@/lib/types";
-
-const CITIES = [
-  "Tbilisi", "Kutaisi", "Batumi", "Zugdidi", "Gori",
-  "Rustavi", "Telavi", "Borjomi", "Bakuriani", "Gudauri", "Poti",
-];
 
 const T = {
   en: {
-    search: "Search", reset: "Clear", destination: "Anywhere",
-    fromCity: "From city", toCity: "To city", minGel: "Price from", maxGel: "Price to",
-    vehicleType: "Vehicle type", postListing: "Post listing", signIn: "Sign in", signOut: "Sign out",
-    noListings: "No listings found", noListingsSub: "Try adjusting filters or post a new offer.",
-    spots: "spots", edit: "Edit", delete: "Delete", confirmDelete: "Delete?",
-    availableNow: "Available now", today: "Today", tomorrow: "Tomorrow",
-    upcoming: "Upcoming", expired: "Expired", loading: "Loading…", full: "Full",
-    listings: "listings", cities: "cities", driver: "Driver", vehicle: "Vehicle",
-    available: "Available", capacity: "Capacity", callDriver: "Call", viewDetails: "View details",
-    trustedTransport: "Trusted transport listings",
-    trustedTransportSub: "Find available drivers, compare prices, and contact them instantly.",
-    all: "All", searchFilters: "Search & filters", findTransport: "Find the right transport faster",
+    board: "Poti to Georgia transport board",
+    search: "Search",
+    reset: "Reset filters",
+    fromCity: "From city",
+    toCity: "To city",
+    minGel: "Price from",
+    maxGel: "Price to",
+    vehicleType: "Vehicle type",
+    quickSearch: "Quick search",
+    quickSearchPlaceholder: "City, route, or driver",
+    postListing: "Post listing",
+    signIn: "Sign in",
+    signOut: "Sign out",
+    admin: "Admin",
+    noListings: "No listings found",
+    noListingsSub: "Try widening the route, budget, or vehicle filters.",
+    spots: "spots",
+    edit: "Edit",
+    delete: "Delete",
+    confirmDelete: "Delete this listing?",
+    availableNow: "Available now",
+    today: "Today",
+    tomorrow: "Tomorrow",
+    upcoming: "Upcoming",
+    expired: "Expired",
+    loading: "Loading listings...",
+    full: "Full",
+    listings: "Listings",
+    cities: "Cities",
+    driver: "Driver",
+    vehicle: "Vehicle",
+    available: "Available",
+    capacity: "Capacity",
+    callDriver: "Call driver",
+    viewDetails: "View details",
+    trustedTransport: "Professional vehicle transport across Georgia",
+    trustedTransportSub:
+      "Review verified routes from Poti, compare prices quickly, and reach drivers without friction.",
+    all: "All",
+    allCities: "All cities",
+    searchFilters: "Search and filters",
+    findTransport: "Find the right transport faster",
+    price: "Price",
+    advertisement: "Partnership",
+    advertiseTitle: "Place your transport business in front of drivers and customers",
+    advertiseSub: "Contact us at potihaul@gmail.com for featured placements and sponsor spots.",
+    advertiseCta: "Talk to us",
+    copied: "Copied",
+    copyNumber: "Copy number",
+    yours: "Your listing",
   },
   ka: {
-    search: "ძებნა", reset: "გასუფთავება", destination: "ნებისმიერი",
-    fromCity: "საიდან", toCity: "სადამდე", minGel: "ფასი დან", maxGel: "ფასი მდე",
-    vehicleType: "ტრანსპორტის ტიპი", postListing: "განცხადების დამატება",
-    signIn: "შესვლა", signOut: "გასვლა", noListings: "განცხადება ვერ მოიძებნა",
-    noListingsSub: "შეცვალეთ ფილტრები ან დაამატეთ ახალი განცხადება.",
-    spots: "ადგილი", edit: "რედაქტირება", delete: "წაშლა", confirmDelete: "წაშალოთ?",
-    availableNow: "ახლავე", today: "დღეს", tomorrow: "ხვალ", upcoming: "მომავალში",
-    expired: "ვადაგასული", loading: "იტვირთება…", full: "სავსეა",
-    listings: "განცხადება", cities: "ქალაქი", driver: "მძღოლი", vehicle: "ტრანსპორტი",
-    available: "ხელმისაწვდომია", capacity: "ტევადობა", callDriver: "ზარი",
-    viewDetails: "დეტალები", trustedTransport: "სანდო ტრანსპორტის განცხადებები",
-    trustedTransportSub: "იპოვე ხელმისაწვდომი მძღოლები, შეადარე ფასები და დაუკავშირდი პირდაპირ.",
-    all: "ყველა", searchFilters: "ძებნა და ფილტრები", findTransport: "იპოვე სწორი ტრანსპორტი უფრო სწრაფად",
+    board: "ფოთიდან საქართველოს მასშტაბით",
+    search: "ძებნა",
+    reset: "ფილტრების გასუფთავება",
+    fromCity: "საიდან",
+    toCity: "სადამდე",
+    minGel: "ფასი დან",
+    maxGel: "ფასი მდე",
+    vehicleType: "ტრანსპორტის ტიპი",
+    quickSearch: "სწრაფი ძებნა",
+    quickSearchPlaceholder: "ქალაქი, მარშრუტი ან მძღოლი",
+    postListing: "განცხადების დამატება",
+    signIn: "შესვლა",
+    signOut: "გასვლა",
+    admin: "ადმინი",
+    noListings: "განცხადება ვერ მოიძებნა",
+    noListingsSub: "სცადე უფრო ფართო მარშრუტი, ბიუჯეტი ან ტრანსპორტის ტიპი.",
+    spots: "ადგილი",
+    edit: "რედაქტირება",
+    delete: "წაშლა",
+    confirmDelete: "წავშალოთ ეს განცხადება?",
+    availableNow: "ახლავე",
+    today: "დღეს",
+    tomorrow: "ხვალ",
+    upcoming: "მომავალში",
+    expired: "ვადაგასული",
+    loading: "განცხადებები იტვირთება...",
+    full: "სავსეა",
+    listings: "განცხადებები",
+    cities: "ქალაქები",
+    driver: "მძღოლი",
+    vehicle: "ტრანსპორტი",
+    available: "ხელმისაწვდომია",
+    capacity: "ტევადობა",
+    callDriver: "დარეკვა",
+    viewDetails: "დეტალები",
+    trustedTransport: "პროფესიონალური ავტოტრანსპორტი მთელი საქართველოსთვის",
+    trustedTransportSub:
+      "ფოთიდან გამავალი რეალური მარშრუტები, სწრაფი ფასების შედარება და პირდაპირი კავშირი მძღოლებთან.",
+    all: "ყველა",
+    allCities: "ყველა ქალაქი",
+    searchFilters: "ძებნა და ფილტრები",
+    findTransport: "იპოვე სწორი ტრანსპორტი უფრო სწრაფად",
+    price: "ფასი",
+    advertisement: "პარტნიორობა",
+    advertiseTitle: "გამოაჩინე შენი სატრანსპორტო ბიზნესი სწორ აუდიტორიასთან",
+    advertiseSub: "გამოგვიწერე: potihaul@gmail.com და განვათავსებთ გამორჩეულ რეკლამას.",
+    advertiseCta: "დაგვიკავშირდი",
+    copied: "დაკოპირდა",
+    copyNumber: "ნომრის კოპირება",
+    yours: "შენი განცხადება",
   },
 } as const;
 
-type Lang = keyof typeof T;
+const VEHICLE_GRADIENTS = [
+  "from-sky-700 via-blue-700 to-blue-900",
+  "from-blue-600 via-cyan-600 to-sky-800",
+  "from-orange-500 via-orange-600 to-rose-600",
+  "from-cyan-600 via-sky-700 to-blue-800",
+  "from-blue-700 via-indigo-700 to-sky-700",
+];
 
 function getBadge(ts: string, t: (typeof T)[Lang]) {
   const diffH = (new Date(ts).getTime() - Date.now()) / 36e5;
-  if (isNaN(diffH) || diffH < -1) return { label: t.expired, cls: "bg-gray-100 text-gray-500 border border-gray-200" };
-  if (diffH <= 0) return { label: t.availableNow, cls: "bg-orange-500 text-white border border-orange-500" };
-  if (diffH < 24) return { label: t.today, cls: "bg-orange-50 text-orange-700 border border-orange-200" };
-  if (diffH < 48) return { label: t.tomorrow, cls: "bg-blue-50 text-blue-700 border border-blue-200" };
-  return { label: t.upcoming, cls: "bg-slate-100 text-slate-700 border border-slate-200" };
-}
 
-function translateVehicleType(type: string, lang: Lang) {
-  const v = type.trim().toLowerCase();
-  if (lang === "ka") {
-    if (v.includes("tow")) return "ამწე";
-    if (v.includes("carrier")) return "ავტოვოზი";
-    if (v.includes("trailer")) return "მისაბმელი";
-    if (v.includes("truck")) return "სატვირთო";
-    if (v.includes("minivan")) return "მინივენი";
-    return type;
+  if (Number.isNaN(diffH) || diffH < -1) {
+    return {
+      label: t.expired,
+      cls: "border border-slate-200 bg-white/10 text-slate-200",
+    };
   }
-  if (v.includes("ამწე")) return "Tow truck";
-  if (v.includes("ავტოვოზი")) return "Carrier";
-  if (v.includes("მისაბმელი")) return "Trailer";
-  if (v.includes("სატვირთო")) return "Truck";
-  if (v.includes("მინივენი")) return "Minivan";
-  return type;
+
+  if (diffH <= 0) {
+    return {
+      label: t.availableNow,
+      cls: "border border-orange-300 bg-orange-400 text-slate-950",
+    };
+  }
+
+  if (diffH < 24) {
+    return {
+      label: t.today,
+      cls: "border border-orange-200 bg-white/15 text-orange-100",
+    };
+  }
+
+  if (diffH < 48) {
+    return {
+      label: t.tomorrow,
+      cls: "border border-sky-200 bg-sky-400/20 text-sky-100",
+    };
+  }
+
+  return {
+    label: t.upcoming,
+    cls: "border border-white/10 bg-white/10 text-white/80",
+  };
 }
 
-function VehicleIcon({ type, className = "" }: { type: string; className?: string }) {
-  const t = type.toLowerCase();
-  if (t.includes("tow") || t.includes("ამწე")) return (
-    <svg className={className} viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="14" width="36" height="18" rx="3" stroke="currentColor" strokeWidth="2.5" />
-      <rect x="38" y="20" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2.5" />
-      <line x1="38" y1="26" x2="58" y2="26" stroke="currentColor" strokeWidth="2.5" />
-      <circle cx="12" cy="34" r="4" stroke="currentColor" strokeWidth="2.5" />
-      <circle cx="28" cy="34" r="4" stroke="currentColor" strokeWidth="2.5" />
-      <circle cx="50" cy="34" r="4" stroke="currentColor" strokeWidth="2.5" />
-      <path d="M2 20h10V14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="14" y1="6" x2="14" y2="14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="8" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="20" y1="6" x2="20" y2="14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-    </svg>
-  );
-  if (t.includes("carrier") || t.includes("ავტოვოზი")) return (
-    <svg className={className} viewBox="0 0 64 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="22" width="56" height="12" rx="2" stroke="currentColor" strokeWidth="2.5" />
-      <rect x="6" y="10" width="22" height="12" rx="2" stroke="currentColor" strokeWidth="2.5" />
-      <rect x="32" y="4" width="22" height="12" rx="2" stroke="currentColor" strokeWidth="2.5" />
-      <line x1="28" y1="10" x2="32" y2="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="12" cy="36" r="4" stroke="currentColor" strokeWidth="2.5" />
-      <circle cx="32" cy="36" r="4" stroke="currentColor" strokeWidth="2.5" />
-      <circle cx="50" cy="36" r="4" stroke="currentColor" strokeWidth="2.5" />
-    </svg>
-  );
-  if (t.includes("trailer") || t.includes("მისაბმელი") || t.includes("minivan") || t.includes("მინივენი")) return (
-    <svg className={className} viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="12" width="38" height="20" rx="3" stroke="currentColor" strokeWidth="2.5" />
-      <rect x="40" y="18" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2.5" />
-      <line x1="38" y1="25" x2="40" y2="25" stroke="currentColor" strokeWidth="2.5" />
-      <circle cx="14" cy="34" r="4" stroke="currentColor" strokeWidth="2.5" />
-      <circle cx="50" cy="34" r="4" stroke="currentColor" strokeWidth="2.5" />
-      <path d="M2 20h8v-8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="14" y1="12" x2="26" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-  return (
-    <svg className={className} viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="12" width="44" height="20" rx="3" stroke="currentColor" strokeWidth="2.5" />
-      <path d="M46 18h10l4 6v8H46V18Z" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
-      <circle cx="14" cy="34" r="4" stroke="currentColor" strokeWidth="2.5" />
-      <circle cx="32" cy="34" r="4" stroke="currentColor" strokeWidth="2.5" />
-      <circle cx="54" cy="34" r="4" stroke="currentColor" strokeWidth="2.5" />
-      <line x1="10" y1="12" x2="10" y2="20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <line x1="20" y1="12" x2="20" y2="20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
+function formatDate(ts: string, lang: Lang) {
+  const date = new Date(ts);
 
-const VEHICLE_BG = ["bg-slate-900", "bg-zinc-900", "bg-neutral-900", "bg-stone-900", "bg-gray-900"];
+  if (Number.isNaN(date.getTime())) {
+    return ts;
+  }
 
-function formatDate(ts: string) {
-  const d = new Date(ts);
-  return isNaN(d.getTime()) ? ts : d.toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleString(lang === "ka" ? "ka-GE" : "en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function waLink(phone: string) {
-  const d = phone.replace(/[^\d]/g, "");
-  return `https://wa.me/${d.startsWith("995") ? d : `995${d}`}`;
+  const digits = phone.replace(/[^\d]/g, "");
+  return `https://wa.me/${digits.startsWith("995") ? digits : `995${digits}`}`;
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4">
-      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">{label}</div>
-      <div className="mt-1 text-3xl font-black text-gray-950">{value}</div>
-    </div>
-  );
-}
-
-function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
+function InfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: ReactNode;
+}) {
   return (
     <div className="flex items-start gap-3">
-      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-500">{icon}</div>
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+        {icon}
+      </div>
       <div className="min-w-0">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.15em] text-gray-400">{label}</div>
-        <div className="truncate text-sm font-semibold text-gray-800">{value}</div>
+        <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
+          {label}
+        </div>
+        <div className="truncate text-sm font-semibold text-slate-800">{value}</div>
       </div>
     </div>
   );
 }
 
-function translateCity(city: string, lang: Lang) {
-  const c = city.trim().toLowerCase();
-  if (lang === "ka") {
-    const map: Record<string, string> = { poti: "ფოთი", tbilisi: "თბილისი", kutaisi: "ქუთაისი", batumi: "ბათუმი", rustavi: "რუსთავი", zugdidi: "ზუგდიდი", gori: "გორი", telavi: "თელავი", kobuleti: "ქობულეთი", senaki: "სენაკი", samtredia: "სამტრედია", khashuri: "ხაშური", borjomi: "ბორჯომი", ozurgeti: "ოზურგეთი" };
-    return map[c] ?? city;
-  }
-  if (lang === "en") {
-    const map: Record<string, string> = { "ფოთი": "Poti", "თბილისი": "Tbilisi", "ქუთაისი": "Kutaisi", "ბათუმი": "Batumi", "რუსთავი": "Rustavi", "ზუგდიდი": "Zugdidi", "გორი": "Gori", "თელავი": "Telavi", "ქობულეთი": "Kobuleti", "სენაკი": "Senaki", "სამტრედია": "Samtredia", "ხაშური": "Khashuri", "ბორჯომი": "Borjomi", "ოზურგეთი": "Ozurgeti" };
-    return map[city.trim()] ?? city;
-  }
-  return city;
-}
-
 export default function Home() {
-  const { user, profile, loading: authLoading, signOut } = useAuth();
-  const [lang, setLang] = useState<Lang>("ka");
+  const { user, profile, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const [lang, setLang] = useState<Lang>(() =>
+    typeof window === "undefined" ? "ka" : languageFromSearch(window.location.search)
+  );
+
   const t = T[lang];
+  const accountRole = getAccountRole(user, profile);
+  const canPost = accountRole !== "customer";
 
   const [destination, setDestination] = useState("");
   const [fromCity, setFromCity] = useState("");
@@ -185,159 +255,325 @@ export default function Home() {
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const parsedMin = useMemo(() => { const n = Number(minGel); return minGel.trim() && isFinite(n) ? n : undefined; }, [minGel]);
-  const parsedMax = useMemo(() => { const n = Number(maxGel); return maxGel.trim() && isFinite(n) ? n : undefined; }, [maxGel]);
+  const cityOptions = useMemo(
+    () =>
+      FILTER_CITY_OPTIONS.map((city) => ({
+        value: city.value,
+        label: lang === "ka" ? city.ka : city.en,
+        icon: <MapPinIcon className="h-4 w-4" />,
+      })),
+    [lang]
+  );
 
-  // Always hide expired by default, no toggle
-  const listings = useMemo(() =>
-    allListings.filter(l => new Date(l.available_from).getTime() > Date.now() - 24 * 36e5),
+  const vehicleOptions = useMemo(
+    () =>
+      FILTER_VEHICLE_OPTIONS.map((vehicle) => ({
+        value: vehicle.kind!,
+        label: lang === "ka" ? vehicle.ka : vehicle.en,
+        icon: <VehicleGlyph kind={vehicle.kind!} className="h-5 w-5" />,
+      })),
+    [lang]
+  );
+
+  const parsedMin = useMemo(() => {
+    const value = Number(minGel);
+    return minGel.trim() && Number.isFinite(value) ? value : undefined;
+  }, [minGel]);
+
+  const parsedMax = useMemo(() => {
+    const value = Number(maxGel);
+    return maxGel.trim() && Number.isFinite(value) ? value : undefined;
+  }, [maxGel]);
+
+  const listings = useMemo(
+    () =>
+      allListings.filter(
+        (listing) =>
+          new Date(listing.available_from).getTime() > Date.now() - 24 * 36e5
+      ),
     [allListings]
   );
 
-  const totalSpots = listings.reduce((s, l) => s + l.spots_available, 0);
-  const coveredCities = new Set(listings.map(l => l.to_city)).size;
-
   async function load() {
     setLoading(true);
-    const data = await getListings({ destination, fromCity, toCity, minGel: parsedMin, maxGel: parsedMax, vehicleType } as any);
+    const data = await getListings({
+      destination,
+      fromCity,
+      toCity,
+      minGel: parsedMin,
+      maxGel: parsedMax,
+      vehicleType,
+    });
     setAllListings(data);
     setLoading(false);
   }
 
   function reset() {
-    setDestination(""); setFromCity(""); setToCity("");
-    setVehicleType(""); setMinGel(""); setMaxGel("");
-    setTimeout(load, 0);
+    setDestination("");
+    setFromCity("");
+    setToCity("");
+    setVehicleType("");
+    setMinGel("");
+    setMaxGel("");
+    setTimeout(() => {
+      void load();
+    }, 0);
   }
 
   async function copyPhone(phone: string) {
-    try { await navigator.clipboard.writeText(phone); setCopiedPhone(phone); setTimeout(() => setCopiedPhone(null), 1500); } catch {}
+    try {
+      await navigator.clipboard.writeText(phone);
+      setCopiedPhone(phone);
+      setTimeout(() => setCopiedPhone(null), 1500);
+    } catch {}
   }
 
   async function handleDelete(id: string) {
     if (!confirm(t.confirmDelete)) return;
+
     setDeletingId(id);
-    try { await deleteListing(id); setAllListings(prev => prev.filter(l => l.id !== id)); } finally { setDeletingId(null); }
+
+    try {
+      await deleteListing(id);
+      setAllListings((current) => current.filter((listing) => listing.id !== id));
+    } finally {
+      setDeletingId(null);
+    }
   }
 
-  function canManage(l: Listing) { return !!user && (l.user_id === user.id || profile?.role === "admin"); }
+  function canManage(listing: Listing) {
+    return !!user && (listing.user_id === user.id || profile?.role === "admin");
+  }
 
-  useEffect(() => { load(); }, []); // eslint-disable-line
+  function toggleLanguage() {
+    const next = lang === "en" ? "ka" : "en";
+    setLang(next);
+    router.replace(`/?lang=${next}`, { scroll: false });
+  }
+
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fieldLabelCls =
+    "mb-2 block text-[12px] font-bold uppercase tracking-[0.18em] text-slate-500";
+  const inputCls =
+    "h-14 w-full rounded-[24px] border border-slate-200/90 bg-white/90 px-4 text-[15px] font-semibold text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.04)] outline-none transition placeholder:text-slate-400 focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100";
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] text-gray-900">
-      <header className="sticky top-0 z-50 border-b border-black/5 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center shrink-0">
-            <img src="/logo.png" alt="POTIHAUL logo" className="h-14 sm:h-16 w-auto max-w-[280px] object-contain" />
+    <main lang={lang} className="min-h-screen text-slate-900">
+      <header className="sticky top-0 z-50 border-b border-white/60 bg-[rgba(248,251,255,0.78)] backdrop-blur-xl">
+        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-2 px-3 sm:h-20 sm:gap-4 sm:px-6">
+          <Link href={`/?lang=${lang}`} className="shrink-0">
+            <img
+              src="/logo.png"
+              alt="PotiHaul"
+              className="h-11 w-auto max-w-[180px] object-contain sm:h-16 sm:max-w-[280px]"
+            />
           </Link>
-          <div className="flex items-center gap-2 sm:gap-3">
-            {!authLoading && (user ? (
-              <>
-                {profile?.role === "admin" && (
-                  <Link href="/admin" className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs sm:text-sm font-bold text-amber-700 transition hover:bg-amber-100">
-                    👑 Admin
+
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+            {!authLoading &&
+              (user ? (
+                <>
+                  {accountRole === "admin" && (
+                    <Link
+                      href={`/admin?lang=${lang}`}
+                      aria-label={t.admin}
+                      className="inline-flex h-10 items-center gap-2 rounded-2xl border border-orange-200 bg-orange-50 px-3 text-xs font-bold text-orange-700 transition hover:bg-orange-100 sm:text-sm"
+                    >
+                      <ShieldIcon className="h-4 w-4" />
+                      <span className="hidden sm:inline">{t.admin}</span>
+                    </Link>
+                  )}
+                  <Link
+                    href={`/account?lang=${lang}`}
+                    aria-label={lang === "ka" ? "შენი ანგარიში" : "Your account"}
+                    className="inline-flex h-10 items-center gap-2 rounded-2xl border border-sky-200 bg-white/90 px-2 text-xs font-bold text-sky-800 shadow-[0_8px_22px_rgba(2,132,199,0.08)] transition hover:border-sky-300 hover:bg-sky-50 sm:px-3 sm:text-sm"
+                  >
+                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                      <UserIcon className="h-4 w-4" />
+                    </span>
+                    <span className="hidden md:inline">
+                      {lang === "ka" ? "ანგარიში" : "Account"}
+                    </span>
                   </Link>
-                )}
-                <button onClick={signOut} className="rounded-xl border border-gray-200 px-3 py-2 text-xs sm:text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
-                  {t.signOut}
-                </button>
-              </>
-            ) : (
-              <Link href="/auth" className="rounded-xl border border-gray-200 px-3 py-2 text-xs sm:text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
-                {t.signIn}
+                </>
+              ) : (
+                <Link
+                  href={`/auth?lang=${lang}`}
+                  aria-label={t.signIn}
+                  className="inline-flex h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-3 text-xs font-semibold text-slate-600 transition hover:border-sky-300 hover:bg-sky-50 sm:text-sm"
+                >
+                  <UserIcon className="h-4 w-4 text-sky-700" />
+                  <span className="hidden sm:inline">{t.signIn}</span>
+                </Link>
+              ))}
+
+            {canPost && (
+              <Link
+                href={`/post?lang=${lang}`}
+                aria-label={t.postListing}
+                className="inline-flex h-10 items-center rounded-2xl bg-gradient-to-r from-sky-600 to-blue-700 px-3 text-xs font-bold text-white shadow-[0_12px_30px_rgba(2,132,199,0.24)] transition hover:from-sky-500 hover:to-blue-600 sm:px-4 sm:text-sm"
+              >
+                <span className="text-base leading-none">+</span>
+                <span className="ml-1 hidden sm:inline">{t.postListing}</span>
               </Link>
-            ))}
-            <Link href="/post" className="rounded-xl bg-[#ff6a00] px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-sm transition hover:bg-orange-600">
-              + {t.postListing}
-            </Link>
-            <button onClick={() => setLang(lang === "en" ? "ka" : "en")} className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs sm:text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
-              <img src={lang === "en" ? "https://flagcdn.com/w20/ge.png" : "https://flagcdn.com/w20/gb.png"} width={18} height={14} alt="" className="rounded-sm" />
+            )}
+
+            <button
+              onClick={toggleLanguage}
+              className="flex h-10 items-center gap-1.5 rounded-2xl border border-slate-200 bg-white/80 px-2.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-white sm:gap-2 sm:px-3 sm:text-sm"
+            >
+              <img
+                src={lang === "en" ? "https://flagcdn.com/w20/ge.png" : "https://flagcdn.com/w20/gb.png"}
+                width={18}
+                height={14}
+                alt=""
+                className="rounded-sm"
+              />
               {lang === "en" ? "KA" : "EN"}
             </button>
           </div>
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-4 pb-4 pt-8 sm:px-6">
-        <div className="rounded-[28px] border border-gray-200 bg-white px-6 py-8 shadow-[0_10px_40px_rgba(15,23,42,0.05)] sm:px-8">
-          <div className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-orange-700">
-            POTI → Georgia transport board
-          </div>
-          <h1 className="mt-4 text-3xl sm:text-4xl font-black tracking-tight text-gray-950">{t.trustedTransport}</h1>
-          <p className="mt-3 max-w-3xl text-sm sm:text-base leading-6 text-gray-600">{t.trustedTransportSub}</p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <StatCard label={t.listings} value={listings.length} />
-            <StatCard label={t.cities} value={coveredCities} />
-            <StatCard label={t.spots} value={totalSpots} />
+      <section className="mx-auto max-w-7xl px-4 pb-5 pt-8 sm:px-6">
+        <div className="relative overflow-hidden rounded-[36px] border border-white/80 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.22),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.18),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.97)_55%,rgba(255,247,237,0.96)_100%)] px-6 py-8 shadow-[0_24px_80px_rgba(2,74,122,0.12)] sm:px-8 sm:py-9">
+          <div className="absolute -right-16 top-0 hidden h-64 w-64 rounded-full bg-orange-400/10 blur-3xl lg:block" />
+
+          <div className="relative">
+            <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-orange-700 backdrop-blur">
+              <RouteIcon className="h-3.5 w-3.5" />
+              {t.board}
+            </div>
+
+            <h1 className="mt-4 max-w-4xl text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+              {t.trustedTransport}
+            </h1>
+
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
+              {t.trustedTransportSub}
+            </p>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-6 sm:px-6">
-        <div className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-[0_10px_40px_rgba(15,23,42,0.05)] sm:p-6">
-          <div className="mb-5">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">{t.searchFilters}</div>
-            <div className="mt-1 text-2xl font-black tracking-tight text-gray-950">{t.findTransport}</div>
+      <section className="relative z-30 mx-auto max-w-7xl px-4 pb-6 sm:px-6">
+        <div className="rounded-[34px] border border-white/80 bg-white/78 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur sm:p-6">
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-[12px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                {t.searchFilters}
+              </div>
+              <div className="mt-1 text-2xl font-black tracking-tight text-slate-950">
+                {t.findTransport}
+              </div>
+            </div>
+
+            <div className="rounded-full bg-gradient-to-r from-sky-600 to-blue-700 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-[0_10px_24px_rgba(2,132,199,0.2)]">
+              {listings.length} {t.listings}
+            </div>
           </div>
 
-          <form onSubmit={e => { e.preventDefault(); load(); }} className="grid gap-5">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void load();
+            }}
+            className="grid gap-5"
+          >
             <div className="grid gap-4 lg:grid-cols-12">
               <div className="lg:col-span-3">
-                <label className="mb-2 block text-[13px] font-bold tracking-wide text-gray-700">{t.fromCity}</label>
-                <select value={fromCity} onChange={e => setFromCity(e.target.value)} className="h-14 w-full rounded-2xl border border-gray-300 bg-white px-4">
-                  <option value="">{lang === "ka" ? "ყველა ქალაქი" : "All cities"}</option>
-                  {CITIES.map(city => <option key={city} value={city}>{city}</option>)}
-                </select>
+                <label className={fieldLabelCls}>{t.fromCity}</label>
+                <StylizedDropdown
+                  value={fromCity}
+                  onChange={setFromCity}
+                  options={cityOptions}
+                  placeholder={t.allCities}
+                  buttonIcon={<MapPinIcon className="h-4 w-4" />}
+                />
               </div>
 
               <div className="lg:col-span-3">
-                <label className="mb-2 block text-[13px] font-bold tracking-wide text-gray-700">{t.toCity}</label>
-                <select value={toCity} onChange={e => setToCity(e.target.value)} className="h-14 w-full rounded-2xl border border-gray-300 bg-white px-4">
-                  <option value="">{lang === "ka" ? "ყველა ქალაქი" : "All cities"}</option>
-                  {CITIES.map(city => <option key={city} value={city}>{city}</option>)}
-                </select>
+                <label className={fieldLabelCls}>{t.toCity}</label>
+                <StylizedDropdown
+                  value={toCity}
+                  onChange={setToCity}
+                  options={cityOptions}
+                  placeholder={t.allCities}
+                  buttonIcon={<RouteIcon className="h-4 w-4" />}
+                />
               </div>
 
               <div className="lg:col-span-2">
-                <label className="mb-2 block text-[13px] font-bold tracking-wide text-gray-700">{t.minGel}</label>
-                <input className="h-14 w-full rounded-2xl border border-gray-300 bg-white px-4 text-[15px] font-medium text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-[#ff6a00] focus:ring-4 focus:ring-orange-100" placeholder="0" value={minGel} onChange={e => setMinGel(e.target.value)} inputMode="numeric" />
+                <label className={fieldLabelCls}>{t.minGel}</label>
+                <input
+                  className={inputCls}
+                  placeholder="0"
+                  value={minGel}
+                  onChange={(event) => setMinGel(event.target.value)}
+                  inputMode="numeric"
+                />
               </div>
 
               <div className="lg:col-span-2">
-                <label className="mb-2 block text-[13px] font-bold tracking-wide text-gray-700">{t.maxGel}</label>
-                <input className="h-14 w-full rounded-2xl border border-gray-300 bg-white px-4 text-[15px] font-medium text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-[#ff6a00] focus:ring-4 focus:ring-orange-100" placeholder="∞" value={maxGel} onChange={e => setMaxGel(e.target.value)} inputMode="numeric" />
+                <label className={fieldLabelCls}>{t.maxGel}</label>
+                <input
+                  className={inputCls}
+                  placeholder="∞"
+                  value={maxGel}
+                  onChange={(event) => setMaxGel(event.target.value)}
+                  inputMode="numeric"
+                />
               </div>
 
-              <div className="lg:col-span-2 flex items-end">
-                <button type="submit" disabled={loading} className="h-14 w-full rounded-2xl bg-[#ff6a00] px-5 text-[15px] font-bold text-white transition hover:bg-orange-600 disabled:opacity-50">
-                  {loading ? "…" : t.search}
+              <div className="flex items-end lg:col-span-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex h-14 w-full items-center justify-center gap-2 rounded-[24px] bg-gradient-to-r from-sky-600 to-blue-700 px-5 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(2,132,199,0.24)] transition hover:from-sky-500 hover:to-blue-600 disabled:opacity-50"
+                >
+                  <SearchIcon className="h-4 w-4" />
+                  {loading ? "..." : t.search}
                 </button>
               </div>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-12">
               <div className="lg:col-span-4">
-                <label className="mb-2 block text-[13px] font-bold tracking-wide text-gray-700">{t.vehicleType}</label>
-                <select value={vehicleType} onChange={e => setVehicleType(e.target.value)} className="h-14 w-full rounded-2xl border border-gray-300 bg-white px-4 text-[15px] font-medium text-gray-900 outline-none transition focus:border-[#ff6a00] focus:ring-4 focus:ring-orange-100">
-                  <option value="">{t.all}</option>
-                  <option value="truck">{lang === "ka" ? "სატვირთო" : "Truck"}</option>
-                  <option value="carrier">{lang === "ka" ? "ავტოვოზი" : "Carrier"}</option>
-                  <option value="tow">{lang === "ka" ? "ამწე" : "Tow truck"}</option>
-                  <option value="trailer">{lang === "ka" ? "მისაბმელი" : "Trailer"}</option>
-                  <option value="minivan">{lang === "ka" ? "მინივენი" : "Minivan"}</option>
-                </select>
+                <label className={fieldLabelCls}>{t.vehicleType}</label>
+                <StylizedDropdown
+                  value={vehicleType}
+                  onChange={setVehicleType}
+                  options={vehicleOptions}
+                  placeholder={t.all}
+                  buttonIcon={
+                    <VehicleGlyph
+                      kind={vehicleType ? vehicleKind(vehicleType) : "tow"}
+                      className="h-5 w-5"
+                    />
+                  }
+                />
               </div>
 
               <div className="lg:col-span-4">
-                <label className="mb-2 block text-[13px] font-bold tracking-wide text-gray-700">
-                  {lang === "ka" ? "სწრაფი ძებნა" : "Quick search"}
-                </label>
-                <input className="h-14 w-full rounded-2xl border border-gray-300 bg-white px-4 text-[15px] font-medium text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-[#ff6a00] focus:ring-4 focus:ring-orange-100" placeholder={lang === "ka" ? "ქალაქი ან მარშრუტი" : "City or route"} value={destination} onChange={e => setDestination(e.target.value)} />
+                <label className={fieldLabelCls}>{t.quickSearch}</label>
+                <input
+                  className={inputCls}
+                  placeholder={t.quickSearchPlaceholder}
+                  value={destination}
+                  onChange={(event) => setDestination(event.target.value)}
+                />
               </div>
 
-              <div className="lg:col-span-2 flex items-end">
-                <button type="button" onClick={reset} className="h-14 w-full rounded-2xl border border-gray-300 bg-gray-50 px-4 text-[15px] font-bold text-gray-800 transition hover:bg-gray-100">
+              <div className="flex items-end lg:col-span-2">
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="h-14 w-full rounded-[24px] border border-slate-200 bg-slate-50 px-4 text-[15px] font-bold text-slate-800 transition hover:border-slate-300 hover:bg-white"
+                >
                   {t.reset}
                 </button>
               </div>
@@ -346,130 +582,233 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Ad / partnership box */}
-      <section className="mx-auto max-w-7xl px-4 pb-4 sm:px-6">
-        <a href="mailto:potihaul@gmail.com?subject=Advertising inquiry"
-          className="group flex items-center justify-between gap-4 rounded-[28px] border border-dashed border-orange-300 bg-orange-50 px-6 py-5 transition hover:border-orange-400 hover:bg-orange-100 sm:px-8">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-500 text-2xl text-white shadow-sm">
-              📣
+      <section className="relative z-10 mx-auto max-w-7xl px-4 pb-5 sm:px-6">
+        <a
+          href="mailto:potihaul@gmail.com?subject=Advertising inquiry"
+          className="group flex flex-col gap-4 rounded-[34px] border border-orange-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,237,213,0.9))] px-6 py-5 shadow-[0_16px_50px_rgba(249,115,22,0.12)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_60px_rgba(249,115,22,0.16)] sm:flex-row sm:items-center sm:justify-between sm:px-8"
+        >
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-[0_14px_34px_rgba(249,115,22,0.24)]">
+              <MegaphoneIcon className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-orange-500">
-                {lang === "ka" ? "რეკლამა" : "Advertisement"}
+              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-orange-600">
+                {t.advertisement}
               </div>
-              <div className="text-base font-black text-gray-900">
-                {lang === "ka" ? "განათავსეთ თქვენი რეკლამა აქ" : "Advertise with us"}
+              <div className="mt-1 text-base font-black text-slate-950">
+                {t.advertiseTitle}
               </div>
-              <div className="mt-0.5 text-sm text-gray-500">
-                {lang === "ka" ? "დაგვიკავშირდით: potihaul@gmail.com" : "Contact us: potihaul@gmail.com"}
-              </div>
+              <div className="mt-1 text-sm text-slate-600">{t.advertiseSub}</div>
             </div>
           </div>
-          <div className="shrink-0 rounded-2xl bg-orange-500 px-4 py-2 text-sm font-bold text-white transition group-hover:bg-orange-600">
-            {lang === "ka" ? "დაგვიკავშირდით →" : "Get in touch →"}
+
+          <div className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-700 px-4 py-2 text-sm font-bold text-white shadow-[0_10px_24px_rgba(2,132,199,0.18)] transition group-hover:from-sky-500 group-hover:to-blue-600">
+            {t.advertiseCta}
+            <ArrowRightIcon className="h-4 w-4" />
           </div>
         </a>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6">
         {loading ? (
-          <div className="flex items-center justify-center rounded-[28px] border border-gray-200 bg-white py-20 text-sm text-gray-500 shadow-sm">
+          <div className="flex items-center justify-center rounded-[34px] border border-white/80 bg-white/78 py-20 text-sm text-slate-500 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur">
             <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8Z" />
             </svg>
             {t.loading}
           </div>
         ) : listings.length === 0 ? (
-          <div className="rounded-[28px] border border-dashed border-gray-300 bg-white py-20 text-center shadow-sm">
-            <div className="mb-3 text-5xl">🚛</div>
-            <div className="text-lg font-black text-gray-800">{t.noListings}</div>
-            <p className="mt-2 text-sm text-gray-500">{t.noListingsSub}</p>
-            <Link href="/post" className="mt-6 inline-flex rounded-2xl bg-orange-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-600">
+          <div className="rounded-[34px] border border-dashed border-slate-300 bg-white/78 py-20 text-center shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[28px] bg-gradient-to-br from-sky-600 to-blue-700 text-white shadow-[0_18px_44px_rgba(2,132,199,0.22)]">
+              <BoardIcon className="h-9 w-9" />
+            </div>
+            <div className="mt-5 text-lg font-black text-slate-800">{t.noListings}</div>
+            <p className="mt-2 text-sm text-slate-500">{t.noListingsSub}</p>
+            <Link
+              href={`/post?lang=${lang}`}
+              className="mt-6 inline-flex rounded-2xl bg-gradient-to-r from-sky-600 to-blue-700 px-6 py-3 text-sm font-bold text-white transition hover:from-sky-500 hover:to-blue-600"
+            >
               + {t.postListing}
             </Link>
           </div>
         ) : (
           <div className="grid gap-4">
-            {listings.map((l, i) => {
-              const badge = getBadge(l.available_from, t);
+            {listings.map((listing, index) => {
+              const badge = getBadge(listing.available_from, t);
               const isExpired = badge.label === t.expired;
-              const copied = copiedPhone === l.driver_phone;
-              const owned = canManage(l);
-              const vehicleBg = VEHICLE_BG[i % VEHICLE_BG.length];
-              const displayVehicleType = translateVehicleType(l.vehicle_type, lang);
-              const displayFromCity = translateCity(l.from_city, lang);
-              const displayToCity = translateCity(l.to_city, lang);
+              const copied = copiedPhone === listing.driver_phone;
+              const owned = canManage(listing);
+              const gradient = VEHICLE_GRADIENTS[index % VEHICLE_GRADIENTS.length];
+              const kind = vehicleKind(listing.vehicle_type);
+              const displayVehicleType = vehicleLabel(listing.vehicle_type, lang);
+              const displayFromCity = cityLabel(listing.from_city, lang);
+              const displayToCity = cityLabel(listing.to_city, lang);
 
               return (
-                <article key={l.id} className={`overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_40px_rgba(15,23,42,0.08)] ${isExpired ? "opacity-60" : ""}`}>
-                  <div className="grid lg:grid-cols-[220px_1fr]">
-                    <div className={`relative flex min-h-[190px] flex-col justify-between p-5 text-white ${vehicleBg}`}>
+                <article
+                  key={listing.id}
+                  className={`overflow-hidden rounded-[32px] border border-white/80 bg-white/94 shadow-[0_18px_60px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_70px_rgba(15,23,42,0.11)] ${
+                    isExpired ? "opacity-65" : ""
+                  }`}
+                >
+                  <div className="grid lg:grid-cols-[240px_1fr]">
+                    <div
+                      className={`relative flex min-h-[210px] flex-col justify-between bg-gradient-to-br ${gradient} p-5 text-white`}
+                    >
                       <div className="flex items-start justify-between gap-2">
-                        <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${badge.cls}`}>{badge.label}</span>
+                        <span
+                          className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] ${badge.cls}`}
+                        >
+                          {badge.label}
+                        </span>
+
                         {owned && (
-                          <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-bold text-white/90">
-                            {profile?.role === "admin" ? "ADMIN" : lang === "ka" ? "შენი" : "YOURS"}
+                          <span className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] font-bold text-white/90">
+                            {profile?.role === "admin" ? "ADMIN" : t.yours}
                           </span>
                         )}
                       </div>
+
                       <div className="flex flex-1 items-center justify-center">
-                        <VehicleIcon type={l.vehicle_type} className="h-20 w-24 text-white/80" />
+                        <VehicleGlyph kind={kind} className="h-24 w-28 text-white/85" />
                       </div>
+
                       <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">{t.vehicle}</div>
-                        <div className="mt-1 text-base font-bold text-white">{displayVehicleType}</div>
+                        <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/45">
+                          {t.vehicle}
+                        </div>
+                        <div className="mt-1 text-base font-bold text-white">
+                          {displayVehicleType}
+                        </div>
                       </div>
                     </div>
 
                     <div className="p-5 sm:p-6">
                       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0">
-                          <h2 className="text-2xl font-black tracking-tight text-gray-950">
-                            {displayFromCity}<span className="mx-2 text-orange-500">→</span>{displayToCity}
+                          <h2 className="text-2xl font-black tracking-tight text-slate-950 sm:text-[2rem]">
+                            {displayFromCity}
+                            <span className="mx-2 text-orange-500">→</span>
+                            {displayToCity}
                           </h2>
+
                           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                            <InfoRow label={t.driver} value={l.driver_display_name} icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>} />
-                            <InfoRow label={t.available} value={formatDate(l.available_from)} icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="16" y1="2" x2="16" y2="6" /></svg>} />
-                            <InfoRow label={t.vehicle} value={displayVehicleType} icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="1" y="10" width="14" height="8" rx="1" /><path d="M15 13h4l3 3v4h-7v-7z" /><circle cx="5" cy="20" r="2" /><circle cx="19" cy="20" r="2" /></svg>} />
-                            <InfoRow label={t.capacity} value={l.spots_available > 0 ? <span className="text-emerald-600">{l.spots_available}/{l.capacity_total} {t.spots}</span> : <span className="text-red-500">{t.full}</span>} icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>} />
+                            <InfoRow
+                              label={t.driver}
+                              value={listing.driver_display_name}
+                              icon={<DriverIcon className="h-4 w-4" />}
+                            />
+                            <InfoRow
+                              label={t.available}
+                              value={formatDate(listing.available_from, lang)}
+                              icon={<CalendarIcon className="h-4 w-4" />}
+                            />
+                            <InfoRow
+                              label={t.vehicle}
+                              value={displayVehicleType}
+                              icon={<VehicleGlyph kind={kind} className="h-5 w-5" />}
+                            />
+                            <InfoRow
+                              label={t.capacity}
+                              value={
+                                listing.spots_available > 0 ? (
+                                  <span className="text-emerald-600">
+                                    {listing.spots_available}/{listing.capacity_total} {t.spots}
+                                  </span>
+                                ) : (
+                                  <span className="text-red-500">{t.full}</span>
+                                )
+                              }
+                              icon={<CapacityIcon className="h-4 w-4" />}
+                            />
                           </div>
-                          {l.notes && <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm italic text-gray-600">"{l.notes}"</div>}
+
+                          {listing.notes && (
+                            <div className="mt-4 rounded-[24px] border border-orange-100 bg-orange-50 px-4 py-3 text-sm italic text-slate-600">
+                              <span aria-hidden="true">“</span>
+                              {listing.notes}
+                              <span aria-hidden="true">”</span>
+                            </div>
+                          )}
                         </div>
-                        <div className="shrink-0 lg:text-right">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Price</div>
-                          <div className="mt-1 text-3xl font-black tracking-tight text-gray-950">{l.price_gel}<span className="ml-1 text-orange-500">₾</span></div>
+
+                        <div className="shrink-0 rounded-[26px] border border-slate-200 bg-slate-50 px-5 py-4 lg:min-w-[150px] lg:text-right">
+                          <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                            {t.price}
+                          </div>
+                          <div className="mt-1 text-3xl font-black tracking-tight text-slate-950">
+                            {listing.price_gel}
+                            <span className="ml-1 text-orange-500">₾</span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="mt-6 flex flex-col gap-3 border-t border-gray-100 pt-5 xl:flex-row xl:items-center xl:justify-between">
+                      <div className="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-5 xl:flex-row xl:items-center xl:justify-between">
                         <div className="flex flex-wrap items-center gap-2">
                           {owned && (
                             <>
-                              <Link href={`/listing/${l.id}/edit?lang=${lang}`} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50">✎ {t.edit}</Link>
-                              <button onClick={() => handleDelete(l.id)} disabled={deletingId === l.id} className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-40">
-                                {deletingId === l.id ? "…" : `✕ ${t.delete}`}
+                              <Link
+                                href={`/listing/${listing.id}/edit?lang=${lang}`}
+                                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                              >
+                                <EditIcon className="h-3.5 w-3.5" />
+                                {t.edit}
+                              </Link>
+                              <button
+                                onClick={() => void handleDelete(listing.id)}
+                                disabled={deletingId === listing.id}
+                                className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-40"
+                              >
+                                <TrashIcon className="h-3.5 w-3.5" />
+                                {deletingId === listing.id ? "..." : t.delete}
                               </button>
                             </>
                           )}
                         </div>
+
                         <div className="flex flex-wrap items-center gap-2">
-                          <Link href={`/listing/${l.id}?lang=${lang}`} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50">{t.viewDetails}</Link>
-                          <button onClick={() => copyPhone(l.driver_phone)} className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition ${copied ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}>
-                            {copied ? (
-                              <>✓ {lang === "ka" ? "დაკოპირდა" : "Copied"}</>
-                            ) : (
-                              <>
-                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                                </svg>
-                                {lang === "ka" ? "ნომრის კოპირება" : "Copy number"}
-                              </>
-                            )}
+                          <Link
+                            href={`/listing/${listing.id}?lang=${lang}`}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                          >
+                            <ArrowRightIcon className="h-3.5 w-3.5" />
+                            {t.viewDetails}
+                          </Link>
+                          <button
+                            onClick={() => void copyPhone(listing.driver_phone)}
+                            className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-xs font-bold transition ${
+                              copied
+                                ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                                : "border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            <CopyIcon className="h-3.5 w-3.5" />
+                            {copied ? t.copied : t.copyNumber}
                           </button>
-                          <a href={waLink(l.driver_phone)} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-[#25d366] px-4 py-2 text-xs font-bold text-white transition hover:brightness-95">WhatsApp</a>
-                          <a href={`tel:${l.driver_phone}`} className="rounded-xl bg-orange-500 px-5 py-2 text-xs font-bold text-white transition hover:bg-orange-600">{t.callDriver}</a>
+                          <a
+                            href={waLink(listing.driver_phone)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-2xl bg-[#25d366] px-4 py-2 text-xs font-bold text-white transition hover:brightness-95"
+                          >
+                            <MessageIcon className="h-3.5 w-3.5" />
+                            WhatsApp
+                          </a>
+                          <a
+                            href={`tel:${listing.driver_phone}`}
+                            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-700 px-5 py-2 text-xs font-bold text-white transition hover:from-sky-500 hover:to-blue-600"
+                          >
+                            <PhoneIcon className="h-3.5 w-3.5" />
+                            {t.callDriver}
+                          </a>
                         </div>
                       </div>
                     </div>
@@ -481,21 +820,31 @@ export default function Home() {
         )}
       </section>
 
-      <Link href="/post" className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black text-white shadow-xl transition hover:bg-orange-600 sm:hidden">
-        + {t.postListing}
-      </Link>
+      {canPost && (
+        <Link
+          href={`/post?lang=${lang}`}
+          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-700 px-5 py-3 text-sm font-black text-white shadow-[0_16px_40px_rgba(2,132,199,0.3)] transition hover:from-sky-500 hover:to-blue-600 sm:hidden"
+        >
+          + {t.postListing}
+        </Link>
+      )}
 
-      <footer className="border-t border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <img src="/logo.png" alt="POTIHAUL" className="h-8 w-auto object-contain" />
+      <footer className="border-t border-white/70 bg-white/70 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-center sm:flex-row sm:px-6 sm:text-left">
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <img src="/logo.png" alt="PotiHaul" className="h-8 w-auto object-contain" />
           </div>
-          <div className="text-sm text-gray-500">
-            <a href="mailto:potihaul@gmail.com" className="font-semibold text-gray-700 hover:text-orange-500 transition">
+
+          <div className="text-sm text-slate-500">
+            <a
+              href="mailto:potihaul@gmail.com"
+              className="font-semibold text-slate-700 transition hover:text-orange-500"
+            >
               potihaul@gmail.com
             </a>
           </div>
-          <div className="text-xs text-gray-400">
+
+          <div className="text-xs text-slate-400">
             © {new Date().getFullYear()} PotiHaul. All rights reserved.
           </div>
         </div>
