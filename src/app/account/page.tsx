@@ -18,7 +18,6 @@ import {
 } from "@/components/site-icons";
 import {
   getAccountRole,
-  PENDING_ROLE_KEY,
   type MarketplaceRole,
 } from "@/lib/account-role";
 import { deleteListing, getListingsByUser } from "@/lib/api";
@@ -43,6 +42,9 @@ const COPY = {
     adminDescription:
       "Track platform data, manage users, and moderate every listing.",
     role: "How you use PotiHaul",
+    undecided: "Role not selected yet",
+    undecidedDescription:
+      "You can browse now. If you post a listing, we will ask you to confirm that you offer transport.",
     provider: "Service provider",
     providerDescription: "Publish and manage vehicle transport offers.",
     customer: "Transport customer",
@@ -84,6 +86,9 @@ const COPY = {
     adminDescription:
       "აკონტროლე პლატფორმის მონაცემები, მომხმარებლები და ყველა განცხადება.",
     role: "როგორ იყენებ PotiHaul-ს",
+    undecided: "როლი ჯერ არ არის არჩეული",
+    undecidedDescription:
+      "დათვალიერება ახლავე შეგიძლია. განცხადების დამატებისას გკითხავთ, სთავაზობ თუ არა ტრანსპორტს.",
     provider: "სერვისის მიმწოდებელი",
     providerDescription: "განათავსე და მართე ავტოტრანსპორტირების შეთავაზებები.",
     customer: "ტრანსპორტის მაძიებელი",
@@ -174,6 +179,7 @@ export default function AccountPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [now] = useState(() => Date.now());
   const t = COPY[lang];
+  const userId = user?.id;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -186,21 +192,13 @@ export default function AccountPage() {
   }, [profile, user]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
     setLoadingListings(true);
-    void getListingsByUser(user.id)
+    void getListingsByUser(userId)
       .then(setListings)
       .finally(() => setLoadingListings(false));
-
-    const pendingRole = localStorage.getItem(PENDING_ROLE_KEY);
-    if (pendingRole === "provider" || pendingRole === "customer") {
-      localStorage.removeItem(PENDING_ROLE_KEY);
-      void saveRole(pendingRole, true);
-    }
-    // Persist a role selected immediately before OAuth completes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [userId]);
 
   const analytics = useMemo(() => {
     const active = listings.filter(
@@ -293,15 +291,16 @@ export default function AccountPage() {
   return (
     <main lang={lang} className="min-h-screen pb-16">
       <header className="border-b border-white/70 bg-[rgba(248,251,255,0.86)] backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
-          <Link href={`/?lang=${lang}`}>
+        <div className="mx-auto grid h-[86px] w-full max-w-[1360px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 sm:px-6">
+          <div aria-hidden="true" />
+          <Link href={`/?lang=${lang}`} className="flex items-center justify-self-center">
             <img src="/logo.png" alt="PotiHaul" className="h-12 w-auto object-contain" />
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-self-end">
             {role === "admin" && (
               <Link
                 href={`/admin?lang=${lang}`}
-                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2.5 text-sm font-bold text-white shadow-[0_12px_30px_rgba(249,115,22,0.22)] transition hover:from-orange-400 hover:to-orange-500"
+              className="inline-flex min-h-12 items-center gap-2 rounded-[22px] bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3 text-sm font-bold text-white shadow-[0_12px_30px_rgba(249,115,22,0.22)] transition hover:from-orange-400 hover:to-orange-500"
               >
                 <ShieldIcon className="h-4 w-4" />
                 <span className="hidden sm:inline">{t.admin}</span>
@@ -309,14 +308,14 @@ export default function AccountPage() {
             )}
             <button
               onClick={toggleLanguage}
-              className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-sky-300"
+              className="min-h-12 rounded-[22px] border border-slate-200 bg-white/90 px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-sky-300"
             >
               {lang === "ka" ? "EN" : "KA"}
             </button>
             <button
               onClick={() => void handleSignOut()}
               aria-label={t.signOut}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+              className="inline-flex min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white/90 px-4 py-3 text-sm font-bold text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
             >
               <LogOutIcon className="h-4 w-4" />
               <span className="hidden md:inline">{t.signOut}</span>
@@ -325,7 +324,7 @@ export default function AccountPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6">
+      <div className="mx-auto w-full max-w-[1360px] px-4 pt-8 sm:px-6">
         <Link
           href={`/?lang=${lang}`}
           className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 transition hover:text-sky-700"
@@ -359,6 +358,8 @@ export default function AccountPage() {
                     <ShieldIcon className="h-3.5 w-3.5 text-orange-600" />
                   ) : role === "provider" ? (
                     <VehicleGlyph kind="carrier" className="h-4 w-4 text-sky-700" />
+                  ) : role === "member" ? (
+                    <UserIcon className="h-3.5 w-3.5 text-sky-700" />
                   ) : (
                     <SearchIcon className="h-3.5 w-3.5 text-sky-700" />
                   )}
@@ -366,6 +367,8 @@ export default function AccountPage() {
                     ? t.admin
                     : role === "provider"
                       ? t.provider
+                      : role === "member"
+                        ? t.undecided
                       : t.customer}
                 </div>
               </div>
@@ -375,16 +378,16 @@ export default function AccountPage() {
               {role === "admin" && (
                 <Link
                   href={`/admin?lang=${lang}`}
-                  className="inline-flex items-center gap-2 rounded-[22px] bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3 text-sm font-bold text-white shadow-[0_14px_34px_rgba(249,115,22,0.22)]"
+                  className="inline-flex min-h-12 items-center gap-2 rounded-[22px] bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-3 text-sm font-bold text-white shadow-[0_14px_34px_rgba(249,115,22,0.22)]"
                 >
                   <ShieldIcon className="h-4 w-4" />
                   {t.admin}
                 </Link>
               )}
-              {role === "provider" || role === "admin" ? (
+              {role === "provider" || role === "admin" || role === "member" ? (
                 <Link
                   href={`/post?lang=${lang}`}
-                  className="inline-flex items-center gap-2 rounded-[22px] bg-gradient-to-r from-sky-600 to-blue-700 px-5 py-3 text-sm font-bold text-white shadow-[0_14px_34px_rgba(2,132,199,0.22)]"
+                  className="inline-flex min-h-12 items-center gap-2 rounded-[22px] bg-gradient-to-r from-sky-600 to-blue-700 px-6 py-3 text-sm font-bold text-white shadow-[0_14px_34px_rgba(2,132,199,0.22)]"
                 >
                   <VehicleGlyph kind="tow" className="h-5 w-5" />
                   {t.post}
@@ -392,7 +395,7 @@ export default function AccountPage() {
               ) : (
                 <Link
                   href={`/?lang=${lang}`}
-                  className="inline-flex items-center gap-2 rounded-[22px] bg-gradient-to-r from-sky-600 to-blue-700 px-5 py-3 text-sm font-bold text-white"
+                  className="inline-flex min-h-12 items-center gap-2 rounded-[22px] bg-gradient-to-r from-sky-600 to-blue-700 px-6 py-3 text-sm font-bold text-white"
                 >
                   <SearchIcon className="h-4 w-4" />
                   {t.browse}
@@ -475,6 +478,12 @@ export default function AccountPage() {
               </div>
             )}
 
+            {role === "member" && !message && !providerNotice && (
+              <div className="mt-4 rounded-[22px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800">
+                {t.undecidedDescription}
+              </div>
+            )}
+
             {(message || providerNotice) && (
               <div className="mt-4 rounded-[22px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800">
                 {saving
@@ -492,10 +501,10 @@ export default function AccountPage() {
                 <h2 className="text-xl font-black text-slate-950">{t.myListings}</h2>
                 <p className="mt-1 text-sm text-slate-500">{t.myListingsSub}</p>
               </div>
-              {(role === "provider" || role === "admin") && (
+              {(role === "provider" || role === "admin" || role === "member") && (
                 <Link
                   href={`/post?lang=${lang}`}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-50 px-4 py-2 text-sm font-bold text-sky-700 transition hover:bg-sky-100"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[22px] bg-sky-50 px-5 py-3 text-sm font-bold text-sky-700 transition hover:bg-sky-100"
                 >
                   <VehicleGlyph kind="tow" className="h-5 w-5" />
                   {t.post}
@@ -568,13 +577,13 @@ export default function AccountPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <Link
                             href={`/listing/${listing.id}?lang=${lang}`}
-                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-sky-300 hover:text-sky-700"
+                            className="rounded-[16px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:border-sky-300 hover:text-sky-700"
                           >
                             {t.view}
                           </Link>
                           <Link
                             href={`/listing/${listing.id}/edit?lang=${lang}`}
-                            className="inline-flex items-center gap-1 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-bold text-sky-700 transition hover:bg-sky-100"
+                            className="inline-flex items-center gap-1.5 rounded-[16px] border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-bold text-sky-700 transition hover:bg-sky-100"
                           >
                             <EditIcon className="h-3.5 w-3.5" />
                             {t.edit}
@@ -582,7 +591,7 @@ export default function AccountPage() {
                           <button
                             onClick={() => void removeListing(listing)}
                             disabled={deletingId === listing.id}
-                            className="inline-flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-[16px] border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
                           >
                             <TrashIcon className="h-3.5 w-3.5" />
                             {deletingId === listing.id ? t.deleting : t.remove}

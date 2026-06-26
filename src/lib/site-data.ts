@@ -41,13 +41,13 @@ const EXTRA_CITY_OPTIONS: readonly LocalizedOption[] = [
 export const FILTER_CITY_OPTIONS = CITY_OPTIONS.filter((city) => city.value !== "Other");
 
 export const VEHICLE_OPTIONS: readonly LocalizedOption[] = [
-  { value: "Tow truck", en: "Tow truck", ka: "ამწე", kind: "tow" },
-  { value: "Car carrier", en: "Car carrier", ka: "ავტოვოზი", kind: "carrier" },
+  { value: "Tow truck", en: "Tow truck", ka: "ევაკუატორი", kind: "tow" },
+  { value: "Car carrier", en: "Car carrier", ka: "მანქანების გადამზიდი", kind: "carrier" },
   { value: "Trailer", en: "Trailer", ka: "მისაბმელი", kind: "trailer" },
   {
     value: "Minivan (with trailer)",
     en: "Minivan (with trailer)",
-    ka: "მინივენი (მისაბმელით)",
+    ka: "მიკროავტობუსი + მისაბმელი",
     kind: "minivan",
   },
   { value: "Truck", en: "Truck", ka: "სატვირთო", kind: "truck" },
@@ -90,10 +90,18 @@ export function cityLabel(value: string, lang: Lang) {
 export function vehicleKind(value: string): VehicleKind {
   const lower = normalize(value);
 
-  if (lower.includes("tow") || lower.includes("ამწე")) return "tow";
-  if (lower.includes("carrier") || lower.includes("ავტოვოზ")) return "carrier";
+  if (lower.includes("tow") || lower.includes("ამწე") || lower.includes("ევაკუატორ")) return "tow";
+  if (
+    lower.includes("carrier") ||
+    lower.includes("ავტოვოზ") ||
+    lower.includes("გადამზიდ")
+  ) return "carrier";
   if (lower.includes("trailer") || lower.includes("მისაბმელ")) return "trailer";
-  if (lower.includes("minivan") || lower.includes("მინივენ")) return "minivan";
+  if (
+    lower.includes("minivan") ||
+    lower.includes("მინივენ") ||
+    lower.includes("მიკროავტობუს")
+  ) return "minivan";
   if (lower.includes("truck") || lower.includes("სატვირთო")) return "truck";
   if (lower.includes("other") || lower.includes("სხვა")) return "other";
 

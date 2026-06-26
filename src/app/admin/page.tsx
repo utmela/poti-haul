@@ -484,21 +484,22 @@ export default function AdminPage() {
   return (
     <main lang={lang} className="min-h-screen pb-16">
       <header className="sticky top-0 z-50 border-b border-white/70 bg-[rgba(248,251,255,0.86)] backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6">
-          <Link href={`/?lang=${lang}`} className="shrink-0">
+        <div className="mx-auto grid h-[86px] w-full max-w-[1360px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4 sm:px-6">
+          <div aria-hidden="true" />
+          <Link href={`/?lang=${lang}`} className="flex shrink-0 items-center justify-self-center">
             <img src="/logo.png" alt="PotiHaul" className="h-12 w-auto object-contain" />
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-self-end">
             <Link
               href={`/?lang=${lang}`}
-              className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-sky-300 hover:text-sky-700 sm:inline-flex"
+              className="hidden min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white/90 px-5 py-3 text-sm font-bold text-slate-600 transition hover:border-sky-300 hover:text-sky-700 sm:inline-flex"
             >
               <ArrowRightIcon className="h-4 w-4 rotate-180" />
               {t.marketplace}
             </Link>
             <button
               onClick={toggleLanguage}
-              className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-sky-300"
+              className="min-h-12 rounded-[22px] border border-slate-200 bg-white/90 px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-sky-300"
             >
               {lang === "ka" ? "EN" : "KA"}
             </button>
@@ -506,7 +507,7 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1440px] px-4 pt-8 sm:px-6">
+      <div className="mx-auto w-full max-w-[1360px] px-4 pt-8 sm:px-6">
         <section className="overflow-hidden rounded-[36px] border border-white/80 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.2),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.18),transparent_34%),linear-gradient(135deg,#ffffff_0%,#f0f9ff_58%,#fff7ed_100%)] p-6 shadow-[0_24px_80px_rgba(2,74,122,0.11)] sm:p-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -527,7 +528,7 @@ export default function AdminPage() {
                 <button
                   key={item}
                   onClick={() => setTab(item)}
-                  className={`rounded-2xl px-4 py-2.5 text-sm font-bold transition ${
+                  className={`min-h-12 rounded-[22px] px-5 py-3 text-sm font-bold transition ${
                     tab === item
                       ? "bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-[0_10px_28px_rgba(2,132,199,0.22)]"
                       : "border border-slate-200 bg-white/80 text-slate-600 hover:border-sky-300 hover:text-sky-700"
@@ -704,7 +705,7 @@ export default function AdminPage() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder={t.search}
-                  className="h-14 w-full rounded-[24px] border border-slate-200 bg-white pl-11 pr-4 text-sm font-semibold text-slate-800 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                  className="h-[58px] w-full rounded-[25px] border border-slate-200 bg-white pl-11 pr-4 text-sm font-semibold text-slate-800 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
                 />
               </div>
               <StylizedDropdown
@@ -724,7 +725,7 @@ export default function AdminPage() {
               <button
                 onClick={() => void loadDashboard()}
                 disabled={loading}
-                className="inline-flex h-14 items-center justify-center gap-2 rounded-[24px] border border-sky-200 bg-sky-50 px-4 text-sm font-bold text-sky-700 transition hover:bg-sky-100 disabled:opacity-50"
+                className="inline-flex h-[58px] items-center justify-center gap-2 rounded-[25px] border border-sky-200 bg-sky-50 px-5 text-sm font-bold text-sky-700 transition hover:bg-sky-100 disabled:opacity-50"
               >
                 <RefreshIcon className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                 {t.refresh}
@@ -732,7 +733,7 @@ export default function AdminPage() {
               <button
                 onClick={() => void removeExpired()}
                 disabled={bulkDeleting || analytics.expiredListings.length === 0}
-                className="inline-flex h-14 items-center justify-center gap-2 rounded-[24px] border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-40"
+                className="inline-flex h-[58px] items-center justify-center gap-2 rounded-[25px] border border-red-200 bg-red-50 px-5 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-40"
               >
                 <TrashIcon className="h-4 w-4" />
                 {t.removeExpired} ({analytics.expiredListings.length})
@@ -808,13 +809,13 @@ export default function AdminPage() {
                             <div className="flex items-center gap-2">
                               <Link
                                 href={`/listing/${listing.id}?lang=${lang}`}
-                                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-sky-300 hover:text-sky-700"
+                                className="rounded-[16px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:border-sky-300 hover:text-sky-700"
                               >
                                 {t.view}
                               </Link>
                               <Link
                                 href={`/listing/${listing.id}/edit?lang=${lang}`}
-                                className="inline-flex items-center gap-1 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-bold text-sky-700 transition hover:bg-sky-100"
+                                className="inline-flex items-center gap-1.5 rounded-[16px] border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-bold text-sky-700 transition hover:bg-sky-100"
                               >
                                 <EditIcon className="h-3.5 w-3.5" />
                                 {t.edit}
@@ -823,7 +824,7 @@ export default function AdminPage() {
                                 onClick={() => void removeListing(listing.id)}
                                 disabled={deletingId === listing.id}
                                 aria-label={`${t.remove}: ${listing.driver_display_name}`}
-                                className="inline-flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 rounded-[16px] border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
                               >
                                 <TrashIcon className="h-3.5 w-3.5" />
                                 {deletingId === listing.id ? "..." : t.remove}
@@ -888,7 +889,7 @@ export default function AdminPage() {
                             <button
                               onClick={() => void changeRole(item)}
                               disabled={isCurrentUser || updatingUserId === item.id}
-                              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-40"
+                              className="rounded-[16px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               {updatingUserId === item.id
                                 ? "..."

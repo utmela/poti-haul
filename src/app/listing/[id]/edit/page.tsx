@@ -17,6 +17,11 @@ import { getListingById, updateListing } from "@/lib/api";
 import { getAccountRole } from "@/lib/account-role";
 import { useAuth } from "@/lib/auth-context";
 import {
+  clampIntegerInput,
+  MAX_CAPACITY,
+  MAX_PRICE_GEL,
+} from "@/lib/number-input";
+import {
   cityLabel,
   CITY_OPTIONS,
   languageFromSearch,
@@ -128,9 +133,21 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
   );
 
   const inputCls =
-    "h-14 w-full rounded-[24px] border border-slate-200 bg-white px-4 text-[15px] font-semibold text-slate-900 placeholder:text-slate-400 shadow-[0_10px_24px_rgba(15,23,42,0.04)] outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100";
+    "h-[58px] w-full rounded-[25px] border border-slate-200 bg-white px-4 text-[15px] font-semibold text-slate-900 placeholder:text-slate-400 shadow-[0_10px_24px_rgba(15,23,42,0.04)] outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100";
   const textAreaCls =
     "w-full rounded-[24px] border border-slate-200 bg-white px-4 py-3 text-[15px] font-semibold text-slate-900 placeholder:text-slate-400 shadow-[0_10px_24px_rgba(15,23,42,0.04)] outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100";
+
+  function updateCapacityTotal(raw: string) {
+    const nextCapacity = clampIntegerInput(raw, 1, MAX_CAPACITY, capacityTotal);
+    setCapacityTotal(nextCapacity);
+    setSpotsAvailable((current) => Math.min(current, nextCapacity));
+  }
+
+  function updateSpotsAvailable(raw: string) {
+    setSpotsAvailable(
+      clampIntegerInput(raw, 0, Math.min(capacityTotal, MAX_CAPACITY), spotsAvailable)
+    );
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -180,7 +197,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         </div>
         <Link
           href={`/?lang=${lang}`}
-          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          className="inline-flex min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
         >
           ← {ka ? "მთავარი" : "Home"}
         </Link>
@@ -196,7 +213,7 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
         </div>
         <Link
           href={`/?lang=${lang}`}
-          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          className="inline-flex min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
         >
           ← {ka ? "მთავარი" : "Home"}
         </Link>
@@ -225,11 +242,11 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
 
   return (
     <main lang={lang} className="min-h-screen">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <div className="mx-auto w-full max-w-[1180px] px-4 py-8 sm:px-6">
         <div className="mb-6 flex items-center justify-between gap-3">
           <Link
             href={`/listing/${listing.id}?lang=${lang}`}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/85 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-white"
+            className="inline-flex min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white/85 px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-white"
           >
             ← {ka ? "უკან" : "Back"}
           </Link>
@@ -338,30 +355,42 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 <div className="grid gap-4 sm:grid-cols-3">
                   <Field label={ka ? "ფასი (₾)" : "Price (₾)"}>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       min={0}
+                      max={MAX_PRICE_GEL}
+                      maxLength={5}
                       className={inputCls}
                       value={price}
-                      onChange={(event) => setPrice(Number(event.target.value))}
+                      onChange={(event) =>
+                        setPrice(
+                          clampIntegerInput(event.target.value, 0, MAX_PRICE_GEL, price)
+                        )
+                      }
                     />
                   </Field>
                   <Field label={ka ? "ტევადობა" : "Capacity"}>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       min={1}
+                      max={MAX_CAPACITY}
+                      maxLength={2}
                       className={inputCls}
                       value={capacityTotal}
-                      onChange={(event) => setCapacityTotal(Number(event.target.value))}
+                      onChange={(event) => updateCapacityTotal(event.target.value)}
                     />
                   </Field>
                   <Field label={ka ? "ადგილები" : "Spots"}>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       min={0}
                       max={capacityTotal}
+                      maxLength={2}
                       className={inputCls}
                       value={spotsAvailable}
-                      onChange={(event) => setSpotsAvailable(Number(event.target.value))}
+                      onChange={(event) => updateSpotsAvailable(event.target.value)}
                     />
                   </Field>
                 </div>
@@ -387,14 +416,14 @@ export default function EditListingPage({ params }: { params: Promise<{ id: stri
                 <div className="flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row">
                   <Link
                     href={`/listing/${listing.id}?lang=${lang}`}
-                    className="flex h-14 flex-1 items-center justify-center rounded-[24px] border border-slate-200 bg-white text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                    className="flex h-[58px] flex-1 items-center justify-center rounded-[25px] border border-slate-200 bg-white px-6 text-base font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                   >
                     {ka ? "გაუქმება" : "Cancel"}
                   </Link>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-[24px] bg-gradient-to-r from-sky-600 to-blue-700 text-sm font-bold text-white shadow-[0_14px_34px_rgba(2,132,199,0.22)] transition hover:from-sky-500 hover:to-blue-600 disabled:opacity-50"
+                    className="inline-flex h-[58px] flex-1 items-center justify-center gap-2 rounded-[25px] bg-gradient-to-r from-sky-600 to-blue-700 px-6 text-base font-bold text-white shadow-[0_14px_34px_rgba(2,132,199,0.22)] transition hover:from-sky-500 hover:to-blue-600 disabled:opacity-50"
                   >
                     {loading ? (
                       ka ? "ინახება..." : "Saving..."

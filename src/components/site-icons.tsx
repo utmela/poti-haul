@@ -275,26 +275,32 @@ export function VehicleGlyph({
   kind: VehicleKind;
   className?: string;
 }) {
+  const wheel = (cx: number) => (
+    <>
+      <circle cx={cx} cy="44" r="5.5" fill="currentColor" />
+      <circle cx={cx} cy="44" r="2" fill="white" opacity="0.75" />
+    </>
+  );
+
   if (kind === "tow") {
     return (
       <svg
-        viewBox="0 0 64 44"
+        viewBox="0 0 96 56"
         fill="none"
         className={className}
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
         aria-hidden="true"
       >
-        <rect x="4" y="18" width="24" height="12" rx="3" />
-        <path d="M28 28h10l6-8h8" />
-        <path d="M14 18V8h8" />
-        <path d="M18 8v10" />
-        <path d="M44 20v10" />
-        <circle cx="16" cy="34" r="4" />
-        <circle cx="44" cy="34" r="4" />
-        <circle cx="56" cy="34" r="4" />
+        <path
+          d="M11 37h41l14-13h14c5.5 0 10 4.5 10 10v8H11v-5Z"
+          fill="currentColor"
+        />
+        <path d="M64 26v11h16l-5-11H64Z" fill="white" opacity="0.32" />
+        <path d="M17 28h34l4-6H27c-5.2 0-9 2.1-10 6Z" fill="currentColor" opacity="0.45" />
+        <path d="M24 28h11l-4 6H19l5-6Z" fill="white" opacity="0.28" />
+        <rect x="44" y="17" width="4" height="15" rx="2" fill="currentColor" />
+        <path d="M48 18h18" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        {wheel(27)}
+        {wheel(72)}
       </svg>
     );
   }
@@ -302,22 +308,21 @@ export function VehicleGlyph({
   if (kind === "carrier") {
     return (
       <svg
-        viewBox="0 0 64 44"
+        viewBox="0 0 96 56"
         fill="none"
         className={className}
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
         aria-hidden="true"
       >
-        <path d="M6 28h44l8-10" />
-        <path d="M10 28 18 16h16l-6 12" />
-        <path d="M36 18h16l-4 10" />
-        <path d="M6 28h52" />
-        <circle cx="14" cy="34" r="4" />
-        <circle cx="34" cy="34" r="4" />
-        <circle cx="52" cy="34" r="4" />
+        <path d="M10 37h56l11-12h9v17H10v-5Z" fill="currentColor" />
+        <path d="M67 27v10h11l-4-10h-7Z" fill="white" opacity="0.32" />
+        <path d="M15 30h41l8-9" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
+        <path d="M21 19h19l5 6H16l5-6Z" fill="currentColor" opacity="0.72" />
+        <path d="M51 14h20l5 6H46l5-6Z" fill="currentColor" opacity="0.72" />
+        <path d="M25 20h10" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.35" />
+        <path d="M55 15h11" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.35" />
+        {wheel(24)}
+        {wheel(50)}
+        {wheel(78)}
       </svg>
     );
   }
@@ -325,21 +330,18 @@ export function VehicleGlyph({
   if (kind === "trailer") {
     return (
       <svg
-        viewBox="0 0 64 44"
+        viewBox="0 0 96 56"
         fill="none"
         className={className}
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
         aria-hidden="true"
       >
-        <rect x="4" y="16" width="30" height="14" rx="3" />
-        <path d="M34 24h10l8-8" />
-        <path d="M52 16h6" />
-        <circle cx="14" cy="34" r="4" />
-        <circle cx="28" cy="34" r="4" />
-        <circle cx="54" cy="34" r="4" />
+        <path d="M9 35h38l8-10h10c4.5 0 8 3.5 8 8v9H9v-7Z" fill="currentColor" />
+        <path d="M56 27v10h10l-4-10h-6Z" fill="white" opacity="0.32" />
+        <path d="M73 36h9l5-8h3" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
+        <rect x="82" y="25" width="10" height="16" rx="2" fill="currentColor" opacity="0.78" />
+        {wheel(24)}
+        {wheel(59)}
+        {wheel(87)}
       </svg>
     );
   }
@@ -347,20 +349,19 @@ export function VehicleGlyph({
   if (kind === "minivan") {
     return (
       <svg
-        viewBox="0 0 64 44"
+        viewBox="0 0 96 56"
         fill="none"
         className={className}
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
         aria-hidden="true"
       >
-        <path d="M6 28V18l8-6h18l6 6h8l8 6v4H6Z" />
-        <path d="M42 24h8" />
-        <circle cx="18" cy="34" r="4" />
-        <circle cx="34" cy="34" r="4" />
-        <circle cx="52" cy="34" r="4" />
+        <path d="M8 37V27l12-10h30l13 12h9c5 0 9 4 9 9v4H8v-5Z" fill="currentColor" />
+        <path d="M24 20h11v12H14l10-12Z" fill="white" opacity="0.32" />
+        <path d="M39 20h10l10 12H39V20Z" fill="white" opacity="0.26" />
+        <path d="M81 36h6l4-6h2" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        <rect x="88" y="29" width="7" height="12" rx="2" fill="currentColor" opacity="0.78" />
+        {wheel(25)}
+        {wheel(63)}
+        {wheel(91)}
       </svg>
     );
   }
@@ -368,37 +369,35 @@ export function VehicleGlyph({
   if (kind === "truck") {
     return (
       <svg
-        viewBox="0 0 64 44"
+        viewBox="0 0 96 56"
         fill="none"
         className={className}
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
         aria-hidden="true"
       >
-        <rect x="4" y="14" width="32" height="16" rx="3" />
-        <path d="M36 20h10l6 6v4H36V20Z" />
-        <circle cx="16" cy="34" r="4" />
-        <circle cx="32" cy="34" r="4" />
-        <circle cx="50" cy="34" r="4" />
+        <rect x="8" y="18" width="48" height="24" rx="4" fill="currentColor" />
+        <path d="M56 25h16l12 12v5H56V25Z" fill="currentColor" />
+        <path d="M63 28h8l6 7H63v-7Z" fill="white" opacity="0.32" />
+        <path d="M16 24h30" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.2" />
+        {wheel(25)}
+        {wheel(54)}
+        {wheel(78)}
       </svg>
     );
   }
 
   return (
     <svg
-      viewBox="0 0 64 44"
+      viewBox="0 0 96 56"
       fill="none"
       className={className}
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
       aria-hidden="true"
     >
-      <circle cx="32" cy="22" r="14" />
-      <path d="M32 14v8l5 5" />
+      <path d="M13 38h70v4H13v-4Z" fill="currentColor" opacity="0.28" />
+      <path d="M18 35h8l10-12h25l11 12h7c3 0 5 2 5 5v2H18v-7Z" fill="currentColor" />
+      <path d="M39 25h10v10H30l9-10Z" fill="white" opacity="0.32" />
+      <path d="M53 25h7l8 10H53V25Z" fill="white" opacity="0.26" />
+      {wheel(33)}
+      {wheel(68)}
     </svg>
   );
 }

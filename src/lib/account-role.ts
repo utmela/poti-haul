@@ -2,9 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/lib/types";
 
 export type MarketplaceRole = "provider" | "customer";
-export type AccountRole = "guest" | MarketplaceRole | "admin";
-
-export const PENDING_ROLE_KEY = "potihaul-pending-role";
+export type AccountRole = "guest" | "member" | MarketplaceRole | "admin";
 
 export function getAccountRole(
   user: User | null,
@@ -28,6 +26,9 @@ export function getAccountRole(
     return metadataRole;
   }
 
-  // Existing accounts predate marketplace roles and were transport providers.
-  return "provider";
+  if (profile?.role === "driver") {
+    return "provider";
+  }
+
+  return "member";
 }

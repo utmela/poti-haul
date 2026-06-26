@@ -13,11 +13,21 @@ import {
   NoteIcon,
   PhoneIcon,
   RouteIcon,
+  SearchIcon,
   VehicleGlyph,
 } from "@/components/site-icons";
 import { createListing } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { getAccountRole } from "@/lib/account-role";
+import {
+  getAccountRole,
+  type AccountRole,
+  type MarketplaceRole,
+} from "@/lib/account-role";
+import {
+  clampIntegerInput,
+  MAX_CAPACITY,
+  MAX_PRICE_GEL,
+} from "@/lib/number-input";
 import {
   cityLabel,
   CITY_OPTIONS,
@@ -27,6 +37,7 @@ import {
   vehicleKind,
   vehicleLabel,
 } from "@/lib/site-data";
+import { supabase } from "@/lib/supabase";
 import type { CreateListingInput } from "@/lib/types";
 
 function normalizePhone(raw: string) {
@@ -126,6 +137,148 @@ function Field({
   );
 }
 
+function RoleGate({
+  lang,
+  role,
+  saving,
+  error,
+  onChoose,
+  onBrowse,
+  onBack,
+}: {
+  lang: Lang;
+  role: AccountRole;
+  saving: boolean;
+  error: string | null;
+  onChoose: (role: MarketplaceRole) => void;
+  onBrowse: () => void;
+  onBack: () => void;
+}) {
+  const ka = lang === "ka";
+  const isCustomer = role === "customer";
+
+  return (
+    <main lang={lang} className="flex min-h-screen items-center justify-center px-4 py-8">
+      <div className="mx-auto w-full max-w-[1180px]">
+        <button
+          type="button"
+          onClick={onBack}
+          className="mb-5 inline-flex min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white/85 px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-white"
+        >
+          <span>←</span>
+          {ka ? "უკან" : "Back"}
+        </button>
+
+        <div className="overflow-hidden rounded-[36px] border border-white/80 bg-white/90 shadow-[0_28px_90px_rgba(2,74,122,0.14)] backdrop-blur">
+          <div className="grid lg:grid-cols-[1fr_0.9fr]">
+            <section className="bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.18),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.16),transparent_34%),linear-gradient(160deg,#ffffff_0%,#f0f9ff_58%,#fff7ed_100%)] p-6 sm:p-9">
+              <div className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-bold text-orange-700">
+                {ka ? "აირჩიე მოქმედება" : "Choose action"}
+              </div>
+
+              <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+                {isCustomer
+                  ? ka
+                    ? "განცხადების დასამატებლად გადამზიდავის როლი აირჩიე"
+                    : "Switch to provider to publish a listing"
+                  : ka
+                    ? "რას აკეთებ დღეს?"
+                    : "What are you doing today?"}
+              </h1>
+
+              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">
+                {ka
+                  ? "აირჩიე სთავაზობ ტრანსპორტირების სერვისს თუ ეძებ ტრანსპორტს. განცხადების ფორმა გაიხსნება მხოლოდ სერვისის შეთავაზებისთვის."
+                  : "Choose whether you offer transport or need transport. The listing form opens only for service providers."}
+              </p>
+
+              <div className="mt-7 grid gap-3">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => onChoose("provider")}
+                  className="flex items-start gap-4 rounded-[28px] border border-sky-300 bg-sky-50 p-6 text-left transition hover:bg-white disabled:opacity-60"
+                >
+                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-600 to-blue-700 text-white">
+                    <VehicleGlyph kind="carrier" className="h-8 w-8" />
+                  </span>
+                  <span>
+                    <span className="block text-base font-black text-slate-950">
+                      {ka ? "ვთავაზობ ტრანსპორტს" : "I offer transport"}
+                    </span>
+                    <span className="mt-1 block text-sm leading-6 text-slate-500">
+                      {ka
+                        ? "გახსენი ფორმა, დაამატე მარშრუტი, ფასი და საკონტაქტო ინფორმაცია."
+                        : "Open the listing form and add your route, price, and contact details."}
+                    </span>
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => onChoose("customer")}
+                  className="flex items-start gap-4 rounded-[28px] border border-slate-200 bg-white/85 p-6 text-left transition hover:border-orange-200 hover:bg-orange-50/60 disabled:opacity-60"
+                >
+                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+                    <SearchIcon className="h-7 w-7" />
+                  </span>
+                  <span>
+                    <span className="block text-base font-black text-slate-950">
+                      {ka ? "ვეძებ / ვითხოვ ტრანსპორტს" : "I need / request transport"}
+                    </span>
+                    <span className="mt-1 block text-sm leading-6 text-slate-500">
+                      {ka
+                        ? "შეგინახავთ მაძიებლის როლს და გადაგიყვანთ განცხადებების ძებნაზე."
+                        : "We will save you as a seeker and take you back to search listings."}
+                    </span>
+                  </span>
+                </button>
+              </div>
+
+              {error && (
+                <div className="mt-4 rounded-[22px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
+              {saving && (
+                <div className="mt-4 rounded-[22px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700">
+                  {ka ? "ინახება..." : "Saving..."}
+                </div>
+              )}
+            </section>
+
+            <aside className="border-t border-sky-100 bg-white/72 p-6 lg:border-l lg:border-t-0 sm:p-9">
+              <div className="flex h-full flex-col justify-center rounded-[30px] border border-sky-100 bg-sky-50/80 p-6">
+                <div className="flex h-16 w-16 items-center justify-center rounded-[24px] bg-white text-sky-700 shadow-[0_14px_32px_rgba(2,132,199,0.12)]">
+                  <CheckIcon className="h-8 w-8" />
+                </div>
+                <h2 className="mt-5 text-2xl font-black text-slate-950">
+                  {ka ? "სტუმრებს ნახვა შეუძლიათ" : "Guests can still browse"}
+                </h2>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {ka
+                    ? "ანგარიში და როლი საჭიროა მხოლოდ განცხადების დასამატებლად. ნახვა ყველასთვის ღია რჩება."
+                    : "Accounts and roles are only needed for posting. Public listings stay open for everyone."}
+                </p>
+                <button
+                  type="button"
+                  onClick={onBrowse}
+                  className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-[22px] border border-sky-200 bg-white px-5 py-3 text-sm font-bold text-sky-700 transition hover:bg-sky-50"
+                >
+                  <SearchIcon className="h-4 w-4" />
+                  {ka ? "განცხადებების ნახვა" : "Browse listings"}
+                </button>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export default function PostListingPage() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
@@ -135,14 +288,18 @@ export default function PostListingPage() {
   );
   const ka = lang === "ka";
   const accountRole = getAccountRole(user, profile);
+  const [localRole, setLocalRole] = useState<AccountRole>(accountRole);
+  const [roleConfirmed, setRoleConfirmed] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace(`/auth?lang=${lang}`);
-    } else if (!authLoading && accountRole === "customer") {
-      router.replace(`/account?lang=${lang}&notice=provider`);
+      router.replace(`/auth?lang=${lang}&next=${encodeURIComponent("/post")}`);
     }
-  }, [accountRole, authLoading, lang, router, user]);
+  }, [authLoading, lang, router, user]);
+
+  useEffect(() => {
+    setLocalRole(accountRole);
+  }, [accountRole]);
 
   const [step, setStep] = useState(1);
   const [displayName, setDisplayName] = useState("");
@@ -190,6 +347,18 @@ export default function PostListingPage() {
     () => cityLabel(finalToCity || toCity, lang),
     [finalToCity, toCity, lang]
   );
+
+  function updateCapacityTotal(raw: string) {
+    const nextCapacity = clampIntegerInput(raw, 1, MAX_CAPACITY, capacityTotal);
+    setCapacityTotal(nextCapacity);
+    setSpotsAvailable((current) => Math.min(current, nextCapacity));
+  }
+
+  function updateSpotsAvailable(raw: string) {
+    setSpotsAvailable(
+      clampIntegerInput(raw, 0, Math.min(capacityTotal, MAX_CAPACITY), spotsAvailable)
+    );
+  }
 
   function validateStep(currentStep: number): string | null {
     if (currentStep === 1) {
@@ -288,11 +457,49 @@ export default function PostListingPage() {
   }
 
   const inputCls =
-    "h-14 w-full rounded-[24px] border border-slate-200 bg-white px-4 text-[15px] font-semibold text-slate-900 placeholder:text-slate-400 shadow-[0_10px_24px_rgba(15,23,42,0.04)] outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100";
+    "h-[58px] w-full rounded-[25px] border border-slate-200 bg-white px-4 text-[15px] font-semibold text-slate-900 placeholder:text-slate-400 shadow-[0_10px_24px_rgba(15,23,42,0.04)] outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100";
   const textAreaCls =
     "w-full rounded-[24px] border border-slate-200 bg-white px-4 py-3 text-[15px] font-semibold text-slate-900 placeholder:text-slate-400 shadow-[0_10px_24px_rgba(15,23,42,0.04)] outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100";
 
-  if (authLoading || !user || accountRole === "customer") {
+  async function chooseMarketplaceRole(nextRole: MarketplaceRole) {
+    if (!user) return;
+
+    setLoading(true);
+    setError(null);
+
+    if (nextRole === "provider" && (localRole === "provider" || localRole === "admin")) {
+      setRoleConfirmed(true);
+      setLoading(false);
+      return;
+    }
+
+    const { error: roleError } = await supabase.auth.updateUser({
+      data: { marketplace_role: nextRole },
+    });
+
+    if (roleError) {
+      setError(roleError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (nextRole === "provider") {
+      await supabase
+        .from("profiles")
+        .update({ role: "driver" })
+        .eq("id", user.id);
+      setLocalRole("provider");
+      setRoleConfirmed(true);
+      setLoading(false);
+      return;
+    }
+
+    setLocalRole("customer");
+    setLoading(false);
+    router.push(`/?lang=${lang}`);
+  }
+
+  if (authLoading || !user) {
     return (
       <main className="flex min-h-[80vh] items-center justify-center text-slate-500">
         <div className="flex items-center rounded-[24px] border border-white/70 bg-white/80 px-5 py-4 shadow-[0_16px_40px_rgba(15,23,42,0.08)] backdrop-blur">
@@ -303,6 +510,20 @@ export default function PostListingPage() {
           {ka ? "იტვირთება..." : "Loading..."}
         </div>
       </main>
+    );
+  }
+
+  if (!roleConfirmed) {
+    return (
+      <RoleGate
+        lang={lang}
+        role={localRole}
+        saving={loading}
+        error={error}
+        onChoose={(role) => void chooseMarketplaceRole(role)}
+        onBrowse={() => router.push(`/?lang=${lang}`)}
+        onBack={() => router.push(`/?lang=${lang}`)}
+      />
     );
   }
 
@@ -326,11 +547,11 @@ export default function PostListingPage() {
 
   return (
     <main lang={lang} className="min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <div className="mx-auto w-full max-w-[1360px] px-4 py-8 sm:px-6">
         <div className="mb-6 flex items-center justify-between gap-3">
           <Link
             href={`/?lang=${lang}`}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/85 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-white"
+            className="inline-flex min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white/85 px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-white"
           >
             <span>←</span>
             {ka ? "უკან" : "Back"}
@@ -338,7 +559,7 @@ export default function PostListingPage() {
 
           <button
             onClick={toggleLanguage}
-            className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/85 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-white"
+            className="flex min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white/85 px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-white"
           >
             <img
               src={lang === "en" ? "https://flagcdn.com/w20/ge.png" : "https://flagcdn.com/w20/gb.png"}
@@ -488,32 +709,44 @@ export default function PostListingPage() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <Field label={ka ? "ფასი (₾)" : "Price (₾)"}>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         min={0}
+                        max={MAX_PRICE_GEL}
+                        maxLength={5}
                         className={inputCls}
                         value={price}
-                        onChange={(event) => setPrice(Number(event.target.value))}
+                        onChange={(event) =>
+                          setPrice(
+                            clampIntegerInput(event.target.value, 0, MAX_PRICE_GEL, price)
+                          )
+                        }
                       />
                     </Field>
 
                     <Field label={ka ? "ტევადობა" : "Capacity"}>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         min={1}
+                        max={MAX_CAPACITY}
+                        maxLength={2}
                         className={inputCls}
                         value={capacityTotal}
-                        onChange={(event) => setCapacityTotal(Number(event.target.value))}
+                        onChange={(event) => updateCapacityTotal(event.target.value)}
                       />
                     </Field>
 
                     <Field label={ka ? "თავისუფალი ადგილები" : "Available spots"}>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         min={0}
                         max={capacityTotal}
+                        maxLength={2}
                         className={inputCls}
                         value={spotsAvailable}
-                        onChange={(event) => setSpotsAvailable(Number(event.target.value))}
+                        onChange={(event) => updateSpotsAvailable(event.target.value)}
                       />
                     </Field>
                   </div>
@@ -564,7 +797,7 @@ export default function PostListingPage() {
                       setError(null);
                       setStep((current) => current - 1);
                     }}
-                    className="h-14 flex-1 rounded-[24px] border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                    className="h-[58px] flex-1 rounded-[25px] border border-slate-200 bg-white px-6 text-base font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                   >
                     {ka ? "უკან" : "Back"}
                   </button>
@@ -574,7 +807,7 @@ export default function PostListingPage() {
                   <button
                     type="button"
                     onClick={next}
-                    className="inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-[24px] bg-gradient-to-r from-sky-600 to-blue-700 px-5 text-sm font-bold text-white shadow-[0_14px_34px_rgba(2,132,199,0.22)] transition hover:from-sky-500 hover:to-blue-600"
+                    className="inline-flex h-[58px] flex-1 items-center justify-center gap-2 rounded-[25px] bg-gradient-to-r from-sky-600 to-blue-700 px-6 text-base font-bold text-white shadow-[0_14px_34px_rgba(2,132,199,0.22)] transition hover:from-sky-500 hover:to-blue-600"
                   >
                     {ka ? "შემდეგი" : "Next"}
                     <ArrowRightIcon className="h-4 w-4" />
@@ -584,7 +817,7 @@ export default function PostListingPage() {
                     type="button"
                     onClick={() => void submit()}
                     disabled={loading}
-                    className="inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-[24px] bg-gradient-to-r from-sky-600 to-blue-700 px-5 text-sm font-bold text-white shadow-[0_14px_34px_rgba(2,132,199,0.22)] transition hover:from-sky-500 hover:to-blue-600 disabled:opacity-50"
+                    className="inline-flex h-[58px] flex-1 items-center justify-center gap-2 rounded-[25px] bg-gradient-to-r from-sky-600 to-blue-700 px-6 text-base font-bold text-white shadow-[0_14px_34px_rgba(2,132,199,0.22)] transition hover:from-sky-500 hover:to-blue-600 disabled:opacity-50"
                   >
                     {loading ? (
                       ka ? "იგზავნება..." : "Submitting..."

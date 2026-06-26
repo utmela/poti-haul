@@ -26,6 +26,7 @@ import {
 import { getAccountRole } from "@/lib/account-role";
 import { useAuth } from "@/lib/auth-context";
 import { deleteListing, getListings } from "@/lib/api";
+import { MAX_PRICE_GEL, sanitizeIntegerText } from "@/lib/number-input";
 import {
   cityLabel,
   FILTER_CITY_OPTIONS,
@@ -101,7 +102,7 @@ const T = {
     vehicleType: "ტრანსპორტის ტიპი",
     quickSearch: "სწრაფი ძებნა",
     quickSearchPlaceholder: "ქალაქი, მარშრუტი ან მძღოლი",
-    postListing: "განცხადების დამატება",
+    postListing: "დამატება",
     signIn: "შესვლა",
     signOut: "გასვლა",
     admin: "ადმინი",
@@ -220,7 +221,7 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-sky-50 text-sky-700">
         {icon}
       </div>
       <div className="min-w-0">
@@ -342,7 +343,7 @@ export default function Home() {
   }
 
   function canManage(listing: Listing) {
-    return !!user && (listing.user_id === user.id || profile?.role === "admin");
+    return !!user && (listing.user_id === user.id || accountRole === "admin");
   }
 
   function toggleLanguage() {
@@ -359,13 +360,14 @@ export default function Home() {
   const fieldLabelCls =
     "mb-2 block text-[12px] font-bold uppercase tracking-[0.18em] text-slate-500";
   const inputCls =
-    "h-14 w-full rounded-[24px] border border-slate-200/90 bg-white/90 px-4 text-[15px] font-semibold text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.04)] outline-none transition placeholder:text-slate-400 focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100";
+    "h-[58px] w-full rounded-[25px] border border-slate-200/90 bg-white/90 px-4 text-[15px] font-semibold text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.04)] outline-none transition placeholder:text-slate-400 focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100";
 
   return (
     <main lang={lang} className="min-h-screen text-slate-900">
       <header className="sticky top-0 z-50 border-b border-white/60 bg-[rgba(248,251,255,0.78)] backdrop-blur-xl">
-        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-2 px-3 sm:h-20 sm:gap-4 sm:px-6">
-          <Link href={`/?lang=${lang}`} className="shrink-0">
+        <div className="mx-auto grid h-[76px] w-full max-w-[1360px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-4 sm:h-[86px] sm:gap-4 sm:px-6">
+          <div aria-hidden="true" />
+          <Link href={`/?lang=${lang}`} className="flex shrink-0 items-center justify-self-center">
             <img
               src="/logo.png"
               alt="PotiHaul"
@@ -373,7 +375,7 @@ export default function Home() {
             />
           </Link>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-1.5 justify-self-end sm:gap-3">
             {!authLoading &&
               (user ? (
                 <>
@@ -381,7 +383,7 @@ export default function Home() {
                     <Link
                       href={`/admin?lang=${lang}`}
                       aria-label={t.admin}
-                      className="inline-flex h-10 items-center gap-2 rounded-2xl border border-orange-200 bg-orange-50 px-3 text-xs font-bold text-orange-700 transition hover:bg-orange-100 sm:text-sm"
+                    className="inline-flex h-11 items-center gap-2 rounded-[20px] border border-orange-200 bg-orange-50 px-3.5 text-xs font-bold text-orange-700 transition hover:bg-orange-100 sm:h-12 sm:text-sm"
                     >
                       <ShieldIcon className="h-4 w-4" />
                       <span className="hidden sm:inline">{t.admin}</span>
@@ -390,7 +392,7 @@ export default function Home() {
                   <Link
                     href={`/account?lang=${lang}`}
                     aria-label={lang === "ka" ? "შენი ანგარიში" : "Your account"}
-                    className="inline-flex h-10 items-center gap-2 rounded-2xl border border-sky-200 bg-white/90 px-2 text-xs font-bold text-sky-800 shadow-[0_8px_22px_rgba(2,132,199,0.08)] transition hover:border-sky-300 hover:bg-sky-50 sm:px-3 sm:text-sm"
+                    className="inline-flex h-11 items-center gap-2 rounded-[20px] border border-sky-200 bg-white/90 px-2.5 text-xs font-bold text-sky-800 shadow-[0_8px_22px_rgba(2,132,199,0.08)] transition hover:border-sky-300 hover:bg-sky-50 sm:h-12 sm:px-4 sm:text-sm"
                   >
                     <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
                       <UserIcon className="h-4 w-4" />
@@ -404,7 +406,7 @@ export default function Home() {
                 <Link
                   href={`/auth?lang=${lang}`}
                   aria-label={t.signIn}
-                  className="inline-flex h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-3 text-xs font-semibold text-slate-600 transition hover:border-sky-300 hover:bg-sky-50 sm:text-sm"
+                  className="inline-flex h-11 items-center gap-2 rounded-[20px] border border-slate-200 bg-white/90 px-3.5 text-xs font-semibold text-slate-600 transition hover:border-sky-300 hover:bg-sky-50 sm:h-12 sm:text-sm"
                 >
                   <UserIcon className="h-4 w-4 text-sky-700" />
                   <span className="hidden sm:inline">{t.signIn}</span>
@@ -415,7 +417,7 @@ export default function Home() {
               <Link
                 href={`/post?lang=${lang}`}
                 aria-label={t.postListing}
-                className="inline-flex h-10 items-center rounded-2xl bg-gradient-to-r from-sky-600 to-blue-700 px-3 text-xs font-bold text-white shadow-[0_12px_30px_rgba(2,132,199,0.24)] transition hover:from-sky-500 hover:to-blue-600 sm:px-4 sm:text-sm"
+                className="inline-flex h-11 items-center rounded-[20px] bg-gradient-to-r from-sky-600 to-blue-700 px-4 text-xs font-bold text-white shadow-[0_12px_30px_rgba(2,132,199,0.24)] transition hover:from-sky-500 hover:to-blue-600 sm:h-12 sm:px-5 sm:text-sm"
               >
                 <span className="text-base leading-none">+</span>
                 <span className="ml-1 hidden sm:inline">{t.postListing}</span>
@@ -424,7 +426,7 @@ export default function Home() {
 
             <button
               onClick={toggleLanguage}
-              className="flex h-10 items-center gap-1.5 rounded-2xl border border-slate-200 bg-white/80 px-2.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-white sm:gap-2 sm:px-3 sm:text-sm"
+              className="flex h-11 items-center gap-1.5 rounded-[20px] border border-slate-200 bg-white/80 px-3 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-white sm:h-12 sm:gap-2 sm:px-4 sm:text-sm"
             >
               <img
                 src={lang === "en" ? "https://flagcdn.com/w20/ge.png" : "https://flagcdn.com/w20/gb.png"}
@@ -439,17 +441,12 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-4 pb-5 pt-8 sm:px-6">
+      <section className="mx-auto w-full max-w-[1360px] px-4 pb-5 pt-8 sm:px-6">
         <div className="relative overflow-hidden rounded-[36px] border border-white/80 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.22),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.18),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,249,255,0.97)_55%,rgba(255,247,237,0.96)_100%)] px-6 py-8 shadow-[0_24px_80px_rgba(2,74,122,0.12)] sm:px-8 sm:py-9">
           <div className="absolute -right-16 top-0 hidden h-64 w-64 rounded-full bg-orange-400/10 blur-3xl lg:block" />
 
           <div className="relative">
-            <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-orange-700 backdrop-blur">
-              <RouteIcon className="h-3.5 w-3.5" />
-              {t.board}
-            </div>
-
-            <h1 className="mt-4 max-w-4xl text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+            <h1 className="max-w-4xl text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
               {t.trustedTransport}
             </h1>
 
@@ -460,7 +457,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-30 mx-auto max-w-7xl px-4 pb-6 sm:px-6">
+      <section className="relative z-30 mx-auto w-full max-w-[1360px] px-4 pb-6 sm:px-6">
         <div className="rounded-[34px] border border-white/80 bg-white/78 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur sm:p-6">
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -513,8 +510,11 @@ export default function Home() {
                   className={inputCls}
                   placeholder="0"
                   value={minGel}
-                  onChange={(event) => setMinGel(event.target.value)}
+                  onChange={(event) =>
+                    setMinGel(sanitizeIntegerText(event.target.value, MAX_PRICE_GEL))
+                  }
                   inputMode="numeric"
+                  maxLength={5}
                 />
               </div>
 
@@ -522,10 +522,13 @@ export default function Home() {
                 <label className={fieldLabelCls}>{t.maxGel}</label>
                 <input
                   className={inputCls}
-                  placeholder="∞"
+                  placeholder={String(MAX_PRICE_GEL)}
                   value={maxGel}
-                  onChange={(event) => setMaxGel(event.target.value)}
+                  onChange={(event) =>
+                    setMaxGel(sanitizeIntegerText(event.target.value, MAX_PRICE_GEL))
+                  }
                   inputMode="numeric"
+                  maxLength={5}
                 />
               </div>
 
@@ -533,7 +536,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex h-14 w-full items-center justify-center gap-2 rounded-[24px] bg-gradient-to-r from-sky-600 to-blue-700 px-5 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(2,132,199,0.24)] transition hover:from-sky-500 hover:to-blue-600 disabled:opacity-50"
+                  className="flex h-[58px] w-full items-center justify-center gap-2 rounded-[25px] bg-gradient-to-r from-sky-600 to-blue-700 px-6 text-base font-bold text-white shadow-[0_16px_40px_rgba(2,132,199,0.24)] transition hover:from-sky-500 hover:to-blue-600 disabled:opacity-50"
                 >
                   <SearchIcon className="h-4 w-4" />
                   {loading ? "..." : t.search}
@@ -572,7 +575,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={reset}
-                  className="h-14 w-full rounded-[24px] border border-slate-200 bg-slate-50 px-4 text-[15px] font-bold text-slate-800 transition hover:border-slate-300 hover:bg-white"
+                  className="h-[58px] w-full rounded-[25px] border border-slate-200 bg-slate-50 px-5 text-base font-bold text-slate-800 transition hover:border-slate-300 hover:bg-white"
                 >
                   {t.reset}
                 </button>
@@ -582,7 +585,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-4 pb-5 sm:px-6">
+      <section className="relative z-10 mx-auto w-full max-w-[1360px] px-4 pb-5 sm:px-6">
         <a
           href="mailto:potihaul@gmail.com?subject=Advertising inquiry"
           className="group flex flex-col gap-4 rounded-[34px] border border-orange-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,237,213,0.9))] px-6 py-5 shadow-[0_16px_50px_rgba(249,115,22,0.12)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_60px_rgba(249,115,22,0.16)] sm:flex-row sm:items-center sm:justify-between sm:px-8"
@@ -602,14 +605,14 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-700 px-4 py-2 text-sm font-bold text-white shadow-[0_10px_24px_rgba(2,132,199,0.18)] transition group-hover:from-sky-500 group-hover:to-blue-600">
+          <div className="inline-flex items-center gap-2 rounded-[22px] bg-gradient-to-r from-sky-600 to-blue-700 px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(2,132,199,0.18)] transition group-hover:from-sky-500 group-hover:to-blue-600">
             {t.advertiseCta}
             <ArrowRightIcon className="h-4 w-4" />
           </div>
         </a>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6">
+      <section className="mx-auto w-full max-w-[1360px] px-4 pb-16 sm:px-6">
         {loading ? (
           <div className="flex items-center justify-center rounded-[34px] border border-white/80 bg-white/78 py-20 text-sm text-slate-500 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur">
             <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -634,13 +637,13 @@ export default function Home() {
             <p className="mt-2 text-sm text-slate-500">{t.noListingsSub}</p>
             <Link
               href={`/post?lang=${lang}`}
-              className="mt-6 inline-flex rounded-2xl bg-gradient-to-r from-sky-600 to-blue-700 px-6 py-3 text-sm font-bold text-white transition hover:from-sky-500 hover:to-blue-600"
+              className="mt-6 inline-flex min-h-12 items-center rounded-[22px] bg-gradient-to-r from-sky-600 to-blue-700 px-7 py-3 text-sm font-bold text-white transition hover:from-sky-500 hover:to-blue-600"
             >
               + {t.postListing}
             </Link>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-5">
             {listings.map((listing, index) => {
               const badge = getBadge(listing.available_from, t);
               const isExpired = badge.label === t.expired;
@@ -655,13 +658,13 @@ export default function Home() {
               return (
                 <article
                   key={listing.id}
-                  className={`overflow-hidden rounded-[32px] border border-white/80 bg-white/94 shadow-[0_18px_60px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_70px_rgba(15,23,42,0.11)] ${
+                  className={`overflow-hidden rounded-[34px] border border-white/80 bg-white/95 shadow-[0_18px_60px_rgba(15,23,42,0.08)] ring-1 ring-slate-100/70 transition duration-200 hover:-translate-y-0.5 hover:border-sky-100 hover:shadow-[0_24px_74px_rgba(15,23,42,0.11)] ${
                     isExpired ? "opacity-65" : ""
                   }`}
                 >
-                  <div className="grid lg:grid-cols-[240px_1fr]">
+                  <div className="grid lg:grid-cols-[220px_1fr]">
                     <div
-                      className={`relative flex min-h-[210px] flex-col justify-between bg-gradient-to-br ${gradient} p-5 text-white`}
+                      className={`relative flex min-h-[190px] flex-col justify-between bg-gradient-to-br ${gradient} p-5 text-white`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <span
@@ -672,13 +675,13 @@ export default function Home() {
 
                         {owned && (
                           <span className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] font-bold text-white/90">
-                            {profile?.role === "admin" ? "ADMIN" : t.yours}
+                            {accountRole === "admin" ? "ADMIN" : t.yours}
                           </span>
                         )}
                       </div>
 
                       <div className="flex flex-1 items-center justify-center">
-                        <VehicleGlyph kind={kind} className="h-24 w-28 text-white/85" />
+                        <VehicleGlyph kind={kind} className="h-20 w-24 text-white/88" />
                       </div>
 
                       <div>
@@ -691,9 +694,9 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="p-5 sm:p-6">
+                    <div className="p-5 sm:p-6 lg:p-7">
                       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <h2 className="text-2xl font-black tracking-tight text-slate-950 sm:text-[2rem]">
                             {displayFromCity}
                             <span className="mx-2 text-orange-500">→</span>
@@ -740,7 +743,7 @@ export default function Home() {
                           )}
                         </div>
 
-                        <div className="shrink-0 rounded-[26px] border border-slate-200 bg-slate-50 px-5 py-4 lg:min-w-[150px] lg:text-right">
+                        <div className="shrink-0 rounded-[28px] border border-orange-100 bg-[linear-gradient(145deg,#fff7ed,#ffffff)] px-6 py-5 shadow-[0_14px_36px_rgba(249,115,22,0.08)] lg:min-w-[158px] lg:text-right">
                           <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
                             {t.price}
                           </div>
@@ -757,7 +760,7 @@ export default function Home() {
                             <>
                               <Link
                                 href={`/listing/${listing.id}/edit?lang=${lang}`}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                                className="inline-flex min-h-11 items-center gap-2 rounded-[20px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                               >
                                 <EditIcon className="h-3.5 w-3.5" />
                                 {t.edit}
@@ -765,7 +768,7 @@ export default function Home() {
                               <button
                                 onClick={() => void handleDelete(listing.id)}
                                 disabled={deletingId === listing.id}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-40"
+                                className="inline-flex min-h-11 items-center gap-2 rounded-[20px] border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-40"
                               >
                                 <TrashIcon className="h-3.5 w-3.5" />
                                 {deletingId === listing.id ? "..." : t.delete}
@@ -777,14 +780,14 @@ export default function Home() {
                         <div className="flex flex-wrap items-center gap-2">
                           <Link
                             href={`/listing/${listing.id}?lang=${lang}`}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                            className="inline-flex min-h-11 items-center gap-2 rounded-[20px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                           >
                             <ArrowRightIcon className="h-3.5 w-3.5" />
                             {t.viewDetails}
                           </Link>
                           <button
                             onClick={() => void copyPhone(listing.driver_phone)}
-                            className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-xs font-bold transition ${
+                            className={`inline-flex min-h-11 items-center gap-2 rounded-[20px] border px-4 py-2.5 text-sm font-bold transition ${
                               copied
                                 ? "border-emerald-300 bg-emerald-50 text-emerald-700"
                                 : "border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
@@ -797,14 +800,14 @@ export default function Home() {
                             href={waLink(listing.driver_phone)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 rounded-2xl bg-[#25d366] px-4 py-2 text-xs font-bold text-white transition hover:brightness-95"
+                            className="inline-flex min-h-11 items-center gap-2 rounded-[20px] bg-[#25d366] px-4 py-2.5 text-sm font-bold text-white transition hover:brightness-95"
                           >
                             <MessageIcon className="h-3.5 w-3.5" />
                             WhatsApp
                           </a>
                           <a
                             href={`tel:${listing.driver_phone}`}
-                            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-700 px-5 py-2 text-xs font-bold text-white transition hover:from-sky-500 hover:to-blue-600"
+                            className="inline-flex min-h-11 items-center gap-2 rounded-[20px] bg-gradient-to-r from-sky-600 to-blue-700 px-5 py-2.5 text-sm font-bold text-white shadow-[0_12px_26px_rgba(2,132,199,0.18)] transition hover:from-sky-500 hover:to-blue-600"
                           >
                             <PhoneIcon className="h-3.5 w-3.5" />
                             {t.callDriver}
@@ -823,14 +826,14 @@ export default function Home() {
       {canPost && (
         <Link
           href={`/post?lang=${lang}`}
-          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-700 px-5 py-3 text-sm font-black text-white shadow-[0_16px_40px_rgba(2,132,199,0.3)] transition hover:from-sky-500 hover:to-blue-600 sm:hidden"
+          className="fixed bottom-5 right-5 z-50 flex min-h-14 items-center gap-2 rounded-[22px] bg-gradient-to-r from-sky-600 to-blue-700 px-6 py-3 text-sm font-black text-white shadow-[0_16px_40px_rgba(2,132,199,0.3)] transition hover:from-sky-500 hover:to-blue-600 sm:hidden"
         >
           + {t.postListing}
         </Link>
       )}
 
       <footer className="border-t border-white/70 bg-white/70 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-center sm:flex-row sm:px-6 sm:text-left">
+        <div className="mx-auto flex w-full max-w-[1360px] flex-col items-center justify-between gap-3 px-4 py-6 text-center sm:flex-row sm:px-6 sm:text-left">
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <img src="/logo.png" alt="PotiHaul" className="h-8 w-auto object-contain" />
           </div>

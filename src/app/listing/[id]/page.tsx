@@ -143,7 +143,7 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
         <div className="text-lg font-black text-slate-800">{t.notFound}</div>
         <Link
           href={`/?lang=${lang}`}
-          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          className="inline-flex min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
         >
           ← {t.back}
         </Link>
@@ -173,11 +173,11 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
 
   return (
     <main lang={lang} className="min-h-screen">
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+      <div className="mx-auto w-full max-w-[1180px] px-4 py-8 sm:px-6">
         <div className="mb-6 flex items-center justify-between gap-3">
           <Link
             href={`/?lang=${lang}`}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/85 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-white"
+            className="inline-flex min-h-12 items-center gap-2 rounded-[22px] border border-slate-200 bg-white/85 px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-white"
           >
             ← {t.back}
           </Link>
@@ -221,7 +221,7 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
                 <div className="mt-6 grid gap-3">
                   <a
                     href={`tel:${listing.driver_phone}`}
-                    className="flex h-14 items-center justify-center gap-2 rounded-[24px] bg-gradient-to-r from-sky-600 to-blue-700 text-sm font-black text-white shadow-[0_14px_34px_rgba(2,132,199,0.22)] transition hover:from-sky-500 hover:to-blue-600"
+                    className="flex h-[58px] items-center justify-center gap-2 rounded-[25px] bg-gradient-to-r from-sky-600 to-blue-700 px-6 text-base font-black text-white shadow-[0_14px_34px_rgba(2,132,199,0.22)] transition hover:from-sky-500 hover:to-blue-600"
                   >
                     <PhoneIcon className="h-4 w-4" />
                     {t.call}
@@ -230,7 +230,7 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
                     href={waLink(listing.driver_phone)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-14 items-center justify-center gap-2 rounded-[24px] bg-[#25d366] text-sm font-black text-white transition hover:brightness-95"
+                    className="flex h-[58px] items-center justify-center gap-2 rounded-[25px] bg-[#25d366] px-6 text-base font-black text-white transition hover:brightness-95"
                   >
                     <MessageIcon className="h-4 w-4" />
                     {t.whatsapp}
@@ -324,7 +324,7 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
                 <div className="mt-6 grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-2">
                   <Link
                     href={`/listing/${id}/edit?lang=${lang}`}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-[22px] border border-slate-200 bg-white text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                    className="inline-flex h-[54px] items-center justify-center gap-2 rounded-[22px] border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                   >
                     <EditIcon className="h-4 w-4" />
                     {t.edit}
@@ -332,7 +332,7 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
                   <button
                     onClick={() => void handleDelete()}
                     disabled={deleting}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-[22px] border border-red-200 bg-red-50 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                    className="inline-flex h-[54px] items-center justify-center gap-2 rounded-[22px] border border-red-200 bg-red-50 px-5 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
                   >
                     <TrashIcon className="h-4 w-4" />
                     {deleting ? t.deleting : t.delete}
